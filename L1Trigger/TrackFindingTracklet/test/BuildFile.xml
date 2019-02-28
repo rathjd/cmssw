@@ -43,8 +43,10 @@
     <use   name="CondFormats/DataRecord"/>
     <use   name="RecoTauTag/TauTagTools"/>
     <use   name="RecoTracker/TkSeedGenerator"/>
-  <use   name="CommonTools/UtilAlgos"/>
+    <use   name="CommonTools/UtilAlgos"/>
     <use   name="DataFormats/Phase2TrackerDigi"/>
+    <use   name="DataFormats/L1TMuon"/>
+    <use   name="L1Trigger/L1TMuon"/>
     <flags   CXXFLAGS="-g -O0"/>
   </library>
 </environment>

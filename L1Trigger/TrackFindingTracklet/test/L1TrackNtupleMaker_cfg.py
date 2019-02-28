@@ -4,6 +4,8 @@
 
 import FWCore.ParameterSet.Config as cms
 import os
+import sys
+import FWCore.ParameterSet.VarParsing as VarParsing
 process = cms.Process("L1TrackNtuple")
 
 GEOMETRY = "D17"
@@ -38,17 +40,26 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
 
+options = VarParsing.VarParsing ('standard')
+options.register('inputFile', 'file1.root', VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string, "input file path")
+options.register('outputFile','file1.root', VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string, "output file path")
+
+options.parseArguments()
+
+print("infile: ", options.inputFile)
+print("outfile: ", options.outputFile)
 
 ############################################################
 # input and output
 ############################################################
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(20))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
 if GEOMETRY == "D17":
     #D17 (tilted barrel -- latest and greatest with T5 tracker, see: https://github.com/cms-sw/cmssw/blob/CMSSW_9_3_0_pre2/Configuration/Geometry/README.md)
     Source_Files = cms.untracked.vstring(
-    "/store/relval/CMSSW_9_3_7/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU25ns_93X_upgrade2023_realistic_v5_2023D17PU200-v1/10000/5A8CFF7F-1E2D-E811-A7B0-0242AC130002.root"
+    #"/store/relval/CMSSW_9_3_7/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU25ns_93X_upgrade2023_realistic_v5_2023D17PU200-v1/10000/5A8CFF7F-1E2D-E811-A7B0-0242AC130002.root"
+    options.inputFile
     )
 elif GEOMETRY == "TkOnly":
     Source_Files = cms.untracked.vstring(
@@ -56,7 +67,7 @@ elif GEOMETRY == "TkOnly":
     )
 process.source = cms.Source("PoolSource", fileNames = Source_Files)
 
-process.TFileService = cms.Service("TFileService", fileName = cms.string('TTbar_PU200_WithoutTruncation.root'), closeFileFast = cms.untracked.bool(True))
+process.TFileService = cms.Service("TFileService", fileName = cms.string(options.outputFile), closeFileFast = cms.untracked.bool(True))
 
 
 
@@ -115,6 +126,7 @@ process.L1TrackNtuple = cms.EDAnalyzer('L1TrackNtupleMaker',
                                        DebugMode = cms.bool(False),      # printout lots of debug statements
                                        SaveAllTracks = cms.bool(True),   # save *all* L1 tracks, not just truth matched to primary particle
                                        SaveStubs = cms.bool(False),      # save some info for *all* stubs
+				       SaveMuons = cms.bool(True),	 # save muons
                                        L1Tk_nPar = cms.int32(4),         # use 4 or 5-parameter L1 track fit ??
                                        L1Tk_minNStub = cms.int32(4),     # L1 tracks with >= 4 stubs
                                        TP_minNStub = cms.int32(4),       # require TP to have >= X number of stubs associated with it

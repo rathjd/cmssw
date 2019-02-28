@@ -74,6 +74,25 @@
 #include <iostream>
 
 //////////////
+// additional Sven STD headers
+#include <fstream>
+#include <cmath>
+#include <vector>
+#include <iomanip>
+#include <set>
+#include <sstream>
+#include <bitset>
+
+//////////////
+// additional Sven muon headers
+#include "DataFormats/L1Trigger/interface/Muon.h"
+#include "L1Trigger/L1TMuon/interface/MuonRawDigiTranslator.h"
+#include "L1Trigger/L1TMuon/interface/RegionalMuonRawDigiTranslator.h"
+#include "DataFormats/L1TMuon/interface/RegionalMuonCandFwd.h"
+#include "DataFormats/L1TMuon/interface/RegionalMuonCand.h"
+#include "L1Trigger/L1TMuon/interface/MicroGMTConfiguration.h"
+
+//////////////
 // NAMESPACES
 using namespace std;
 using namespace edm;
@@ -122,6 +141,9 @@ private:
 
   bool SaveTracklet;    // save some tracklet-dedicated variables, turned off by default
 
+  //additional muon stuff
+  bool SaveMuons;	//save muons in addition
+
 
   edm::InputTag L1TrackInputTag;        // L1 track collection
   edm::InputTag MCTruthTrackInputTag;   // MC truth collection
@@ -131,6 +153,15 @@ private:
   edm::InputTag TrackingParticleInputTag;
   edm::InputTag TrackingVertexInputTag;
   edm::InputTag GenJetInputTag;
+
+  //begin sven stuff for muons
+  std::string getFloatPointDataWord(const l1t::RegionalMuonCand& l1mu) const;
+  std::string getGlobalPhi(const l1t::RegionalMuonCand& l1mu) const;
+
+  edm::EDGetToken m_emtfToken;
+  edm::EDGetToken m_bmtfToken;
+  edm::EDGetToken m_omtfToken;
+  //end sven stuff for muons
 
   edm::EDGetTokenT< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_ > > > ttClusterToken_;
   edm::EDGetTokenT< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > > > ttStubToken_;
@@ -251,6 +282,22 @@ private:
   std::vector<float>* m_jet_matchtrk_sumpt;
   std::vector<float>* m_jet_loosematchtrk_sumpt;
 
+  // sven muon variables
+  std::vector<int>*   m_EMTF_muon_n;
+  std::vector<float>* m_EMTF_muon_pt;
+  std::vector<float>* m_EMTF_muon_eta;
+  std::vector<float>* m_EMTF_muon_phi;
+
+  std::vector<int>*   m_OMTF_muon_n;
+  std::vector<float>* m_OMTF_muon_pt;
+  std::vector<float>* m_OMTF_muon_eta;
+  std::vector<float>* m_OMTF_muon_phi;
+
+  std::vector<int>*   m_BMTF_muon_n;
+  std::vector<float>* m_BMTF_muon_pt;
+  std::vector<float>* m_BMTF_muon_eta;
+  std::vector<float>* m_BMTF_muon_phi;
+
 };
 
 
@@ -270,6 +317,7 @@ L1TrackNtupleMaker::L1TrackNtupleMaker(edm::ParameterSet const& iConfig) :
   DebugMode        = iConfig.getParameter< bool >("DebugMode");
   SaveAllTracks    = iConfig.getParameter< bool >("SaveAllTracks");
   SaveStubs        = iConfig.getParameter< bool >("SaveStubs");
+  SaveMuons	   = iConfig.getParameter< bool >("SaveMuons");
   L1Tk_nPar        = iConfig.getParameter< int >("L1Tk_nPar");
   TP_minNStub      = iConfig.getParameter< int >("TP_minNStub");
   TP_minNStubLayer = iConfig.getParameter< int >("TP_minNStubLayer");
@@ -298,6 +346,11 @@ L1TrackNtupleMaker::L1TrackNtupleMaker(edm::ParameterSet const& iConfig) :
   TrackingParticleToken_ = consumes< std::vector< TrackingParticle > >(TrackingParticleInputTag);
   TrackingVertexToken_   = consumes< std::vector< TrackingVertex > >(TrackingVertexInputTag);
   GenJetToken_           = consumes< std::vector< reco::GenJet > >(GenJetInputTag);
+
+  //Svens muon consumes
+  m_emtfToken = consumes<l1t::RegionalMuonCandBxCollection>(edm::InputTag("simEmtfDigis","EMTF"));
+  m_bmtfToken = consumes<l1t::RegionalMuonCandBxCollection>(edm::InputTag("simBmtfDigis","BMTF"));
+  m_omtfToken = consumes<l1t::RegionalMuonCandBxCollection>(edm::InputTag("simOmtfDigis","OMTF"));
 
 }
 
@@ -423,6 +476,22 @@ void L1TrackNtupleMaker::beginJob()
   m_jet_matchtrk_sumpt      = new std::vector<float>;
   m_jet_loosematchtrk_sumpt = new std::vector<float>;
 
+  //extra sven muon stuff
+  m_EMTF_muon_n = new std::vector<int>;
+  m_EMTF_muon_pt = new std::vector<float>;
+  m_EMTF_muon_eta = new std::vector<float>;
+  m_EMTF_muon_phi = new std::vector<float>;
+
+  m_OMTF_muon_n = new std::vector<int>;
+  m_OMTF_muon_pt = new std::vector<float>;
+  m_OMTF_muon_eta = new std::vector<float>;
+  m_OMTF_muon_phi = new std::vector<float>;
+
+  m_BMTF_muon_n = new std::vector<int>;
+  m_BMTF_muon_pt = new std::vector<float>;
+  m_BMTF_muon_eta = new std::vector<float>;
+  m_BMTF_muon_phi = new std::vector<float>;
+
 
   // ntuple
   eventTree = fs->make<TTree>("eventTree", "Event tree");
@@ -532,6 +601,25 @@ void L1TrackNtupleMaker::beginJob()
     eventTree->Branch("jet_trk_sumpt", &m_jet_trk_sumpt);
     eventTree->Branch("jet_matchtrk_sumpt",      &m_jet_matchtrk_sumpt);
     eventTree->Branch("jet_loosematchtrk_sumpt", &m_jet_loosematchtrk_sumpt);
+  }
+
+  //extra sven muon stuff
+  if (SaveMuons) {
+    eventTree->Branch("EMTF_muon_n",	 &m_EMTF_muon_n);
+    eventTree->Branch("EMTF_muon_pt",  	 &m_EMTF_muon_pt);
+    eventTree->Branch("EMTF_muon_eta", 	 &m_EMTF_muon_eta);
+    eventTree->Branch("EMTF_muon_phi", 	 &m_EMTF_muon_phi);
+
+    eventTree->Branch("OMTF_muon_n",	 &m_OMTF_muon_n);
+    eventTree->Branch("OMTF_muon_pt", 	 &m_OMTF_muon_pt);
+    eventTree->Branch("OMTF_muon_eta", 	 &m_OMTF_muon_eta);
+    eventTree->Branch("OMTF_muon_phi", 	 &m_OMTF_muon_phi);
+
+    eventTree->Branch("BMTF_muon_n",	 &m_BMTF_muon_n);
+    eventTree->Branch("BMTF_muon_pt", 	 &m_BMTF_muon_pt);
+    eventTree->Branch("BMTF_muon_eta", 	 &m_BMTF_muon_eta);
+    eventTree->Branch("BMTF_muon_phi", 	 &m_BMTF_muon_phi);
+
   }
 
 
@@ -650,6 +738,24 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
   m_jet_trk_sumpt->clear();
   m_jet_matchtrk_sumpt->clear();
   m_jet_loosematchtrk_sumpt->clear();
+
+  //extra sven muon stuff
+  if (SaveMuons) {
+    m_EMTF_muon_n->clear();
+    m_EMTF_muon_pt->clear();
+    m_EMTF_muon_eta->clear();
+    m_EMTF_muon_phi->clear();
+
+    m_OMTF_muon_n->clear();
+    m_OMTF_muon_pt->clear();
+    m_OMTF_muon_eta->clear();
+    m_OMTF_muon_phi->clear();
+
+    m_BMTF_muon_n->clear();
+    m_BMTF_muon_pt->clear();
+    m_BMTF_muon_eta->clear();
+    m_BMTF_muon_phi->clear();
+  }
 
 
 
@@ -1571,6 +1677,45 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
 	m_jet_loosematchtrk_sumpt->push_back(jets_loosematchtrk_sumpt[ij]);
       }
     }
+  }
+
+  //finally svens muon stuff
+  if (SaveMuons){
+    Handle< BXVector<l1t::RegionalMuonCand> > emtfs;
+    Handle< BXVector<l1t::RegionalMuonCand> > omtfs;
+    Handle< BXVector<l1t::RegionalMuonCand> > bmtfs;
+
+    iEvent.getByToken(m_emtfToken,emtfs);
+    iEvent.getByToken(m_omtfToken,omtfs);
+    iEvent.getByToken(m_bmtfToken,bmtfs);
+
+    int nEMTF=0;
+    for (auto it = emtfs->begin(0); it != emtfs->end(0); it++){
+      m_EMTF_muon_eta->push_back(it->hwEta()*0.010875);
+      int globPhi=l1t::MicroGMTConfiguration::calcGlobalPhi(it->hwPhi(), it->trackFinderType(), it->processor());
+      m_EMTF_muon_phi->push_back(globPhi*2*M_PI/576.);
+      m_EMTF_muon_pt->push_back(it->hwPt()*0.5);
+      ++nEMTF;
+    }
+    m_EMTF_muon_n->push_back(nEMTF);
+
+    int nOMTF=0;
+    for (auto it = omtfs->begin(0); it != omtfs->end(0); it++){
+      m_OMTF_muon_eta->push_back(it->hwEta()*0.010875);
+      m_OMTF_muon_phi->push_back(l1t::MicroGMTConfiguration::calcGlobalPhi(it->hwPhi(), it->trackFinderType(), it->processor())*2*M_PI/576.);
+      m_OMTF_muon_pt->push_back(it->hwPt()*0.5);
+      ++nOMTF;
+    }
+    m_OMTF_muon_n->push_back(nOMTF);
+
+    int nBMTF=0;
+    for (auto it = bmtfs->begin(0); it != bmtfs->end(0); it++){
+      m_BMTF_muon_eta->push_back(it->hwEta()*0.010875);
+      m_BMTF_muon_phi->push_back(l1t::MicroGMTConfiguration::calcGlobalPhi(it->hwPhi(), it->trackFinderType(), it->processor())*2*M_PI/576.);
+      m_BMTF_muon_pt->push_back(it->hwPt()*0.5);
+      ++nBMTF;
+    }
+    m_BMTF_muon_n->push_back(nBMTF);
   }
 
 
