@@ -72,6 +72,7 @@
 #include <memory>
 #include <string>
 #include <iostream>
+#include <math.h>
 
 //////////////
 // additional Sven STD headers
@@ -237,6 +238,7 @@ private:
   std::vector<int>*   m_matchtrk_injet;
   std::vector<int>*   m_matchtrk_injet_highpt;
   std::vector<int>*   m_matchtrk_injet_vhighpt;
+  std::vector<bool>*  m_matchtrk_charge;
 
   // *L1 track* properties if m_tp_nloosematch > 0
   std::vector<float>* m_loosematchtrk_pt;
@@ -287,16 +289,19 @@ private:
   std::vector<float>* m_EMTF_muon_pt;
   std::vector<float>* m_EMTF_muon_eta;
   std::vector<float>* m_EMTF_muon_phi;
+  std::vector<int>*   m_EMTF_muon_c;
 
   std::vector<int>*   m_OMTF_muon_n;
   std::vector<float>* m_OMTF_muon_pt;
   std::vector<float>* m_OMTF_muon_eta;
   std::vector<float>* m_OMTF_muon_phi;
+  std::vector<int>*   m_OMTF_muon_c;
 
   std::vector<int>*   m_BMTF_muon_n;
   std::vector<float>* m_BMTF_muon_pt;
   std::vector<float>* m_BMTF_muon_eta;
   std::vector<float>* m_BMTF_muon_phi;
+  std::vector<int>*   m_BMTF_muon_c;
 
 };
 
@@ -436,6 +441,7 @@ void L1TrackNtupleMaker::beginJob()
   m_matchtrk_injet = new std::vector<int>;
   m_matchtrk_injet_highpt = new std::vector<int>;
   m_matchtrk_injet_vhighpt = new std::vector<int>;
+  m_matchtrk_charge = new std::vector<bool>;
   
   m_loosematchtrk_pt    = new std::vector<float>;
   m_loosematchtrk_eta   = new std::vector<float>;
@@ -481,16 +487,19 @@ void L1TrackNtupleMaker::beginJob()
   m_EMTF_muon_pt = new std::vector<float>;
   m_EMTF_muon_eta = new std::vector<float>;
   m_EMTF_muon_phi = new std::vector<float>;
+  m_EMTF_muon_c = new std::vector<int>;
 
   m_OMTF_muon_n = new std::vector<int>;
   m_OMTF_muon_pt = new std::vector<float>;
   m_OMTF_muon_eta = new std::vector<float>;
   m_OMTF_muon_phi = new std::vector<float>;
+  m_OMTF_muon_c = new std::vector<int>;
 
   m_BMTF_muon_n = new std::vector<int>;
   m_BMTF_muon_pt = new std::vector<float>;
   m_BMTF_muon_eta = new std::vector<float>;
   m_BMTF_muon_phi = new std::vector<float>;
+  m_BMTF_muon_c = new std::vector<int>;
 
 
   // ntuple
@@ -556,6 +565,7 @@ void L1TrackNtupleMaker::beginJob()
     eventTree->Branch("matchtrk_injet_highpt",  &m_matchtrk_injet_highpt);
     eventTree->Branch("matchtrk_injet_vhighpt", &m_matchtrk_injet_vhighpt);
   }
+  eventTree->Branch("matchtrk_charge",&m_matchtrk_charge);
 
   eventTree->Branch("loosematchtrk_pt",    &m_loosematchtrk_pt);
   eventTree->Branch("loosematchtrk_eta",   &m_loosematchtrk_eta);
@@ -609,16 +619,19 @@ void L1TrackNtupleMaker::beginJob()
     eventTree->Branch("EMTF_muon_pt",  	 &m_EMTF_muon_pt);
     eventTree->Branch("EMTF_muon_eta", 	 &m_EMTF_muon_eta);
     eventTree->Branch("EMTF_muon_phi", 	 &m_EMTF_muon_phi);
+    eventTree->Branch("EMTF_muon_c", 	 &m_EMTF_muon_c);
 
     eventTree->Branch("OMTF_muon_n",	 &m_OMTF_muon_n);
     eventTree->Branch("OMTF_muon_pt", 	 &m_OMTF_muon_pt);
     eventTree->Branch("OMTF_muon_eta", 	 &m_OMTF_muon_eta);
     eventTree->Branch("OMTF_muon_phi", 	 &m_OMTF_muon_phi);
+    eventTree->Branch("OMTF_muon_c", 	 &m_OMTF_muon_c);
 
     eventTree->Branch("BMTF_muon_n",	 &m_BMTF_muon_n);
     eventTree->Branch("BMTF_muon_pt", 	 &m_BMTF_muon_pt);
     eventTree->Branch("BMTF_muon_eta", 	 &m_BMTF_muon_eta);
     eventTree->Branch("BMTF_muon_phi", 	 &m_BMTF_muon_phi);
+    eventTree->Branch("BMTF_muon_c", 	 &m_BMTF_muon_c);
 
   }
 
@@ -696,6 +709,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
   m_matchtrk_injet->clear();
   m_matchtrk_injet_highpt->clear();
   m_matchtrk_injet_vhighpt->clear();
+  m_matchtrk_charge->clear();
 
   m_loosematchtrk_pt->clear();
   m_loosematchtrk_eta->clear();
@@ -745,16 +759,19 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
     m_EMTF_muon_pt->clear();
     m_EMTF_muon_eta->clear();
     m_EMTF_muon_phi->clear();
+    m_EMTF_muon_c->clear();
 
     m_OMTF_muon_n->clear();
     m_OMTF_muon_pt->clear();
     m_OMTF_muon_eta->clear();
     m_OMTF_muon_phi->clear();
+    m_OMTF_muon_c->clear();
 
     m_BMTF_muon_n->clear();
     m_BMTF_muon_pt->clear();
     m_BMTF_muon_eta->clear();
     m_BMTF_muon_phi->clear();
+    m_BMTF_muon_c->clear();
   }
 
 
@@ -1454,6 +1471,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
     float tmp_matchtrk_chi2 = -999;
     int tmp_matchtrk_nstub  = -999;
     int tmp_matchtrk_seed   = -999;
+    bool tmp_matchtrk_charge= 0;
 
     float tmp_loosematchtrk_pt   = -999;
     float tmp_loosematchtrk_eta  = -999;
@@ -1473,6 +1491,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
       tmp_matchtrk_eta  = matchedTracks.at(i_track)->getMomentum(L1Tk_nPar).eta();
       tmp_matchtrk_phi  = matchedTracks.at(i_track)->getMomentum(L1Tk_nPar).phi();
       tmp_matchtrk_z0   = matchedTracks.at(i_track)->getPOCA(L1Tk_nPar).z();
+      tmp_matchtrk_charge=signbit(matchedTracks.at(i_track)->getRInv(L1Tk_nPar));
 
       if (L1Tk_nPar == 5) {
 	float tmp_matchtrk_x0 = matchedTracks.at(i_track)->getPOCA(L1Tk_nPar).x();
@@ -1582,6 +1601,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
     m_matchtrk_chi2 ->push_back(tmp_matchtrk_chi2);
     m_matchtrk_nstub->push_back(tmp_matchtrk_nstub);
     if (SaveTracklet) m_matchtrk_seed->push_back(tmp_matchtrk_seed);
+    m_matchtrk_charge->push_back(tmp_matchtrk_charge);
 
     m_loosematchtrk_pt ->push_back(tmp_loosematchtrk_pt);
     m_loosematchtrk_eta->push_back(tmp_loosematchtrk_eta);
@@ -1695,6 +1715,11 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
       int globPhi=l1t::MicroGMTConfiguration::calcGlobalPhi(it->hwPhi(), it->trackFinderType(), it->processor());
       m_EMTF_muon_phi->push_back(globPhi*2*M_PI/576.);
       m_EMTF_muon_pt->push_back(it->hwPt()*0.5);
+      if(!it->hwSignValid()) m_EMTF_muon_c->push_back(0);
+      else{
+	if(it->hwSign())   m_EMTF_muon_c->push_back(-1);
+	else 		   m_EMTF_muon_c->push_back(1);
+      }
       ++nEMTF;
     }
     m_EMTF_muon_n->push_back(nEMTF);
@@ -1704,6 +1729,11 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
       m_OMTF_muon_eta->push_back(it->hwEta()*0.010875);
       m_OMTF_muon_phi->push_back(l1t::MicroGMTConfiguration::calcGlobalPhi(it->hwPhi(), it->trackFinderType(), it->processor())*2*M_PI/576.);
       m_OMTF_muon_pt->push_back(it->hwPt()*0.5);
+      if(!it->hwSignValid()) m_OMTF_muon_c->push_back(0);
+      else{
+	if(it->hwSign())   m_OMTF_muon_c->push_back(-1);
+	else 		   m_OMTF_muon_c->push_back(1);
+      }
       ++nOMTF;
     }
     m_OMTF_muon_n->push_back(nOMTF);
@@ -1713,6 +1743,11 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
       m_BMTF_muon_eta->push_back(it->hwEta()*0.010875);
       m_BMTF_muon_phi->push_back(l1t::MicroGMTConfiguration::calcGlobalPhi(it->hwPhi(), it->trackFinderType(), it->processor())*2*M_PI/576.);
       m_BMTF_muon_pt->push_back(it->hwPt()*0.5);
+      if(!it->hwSignValid()) m_BMTF_muon_c->push_back(0);
+      else{
+	if(it->hwSign())   m_BMTF_muon_c->push_back(-1);
+	else 		   m_BMTF_muon_c->push_back(1);
+      }
       ++nBMTF;
     }
     m_BMTF_muon_n->push_back(nBMTF);
