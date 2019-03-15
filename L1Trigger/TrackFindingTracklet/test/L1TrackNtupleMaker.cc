@@ -414,113 +414,119 @@ L1TrackNtupleMaker::L1TrackNtupleMaker(edm::ParameterSet const& iConfig) :
   // simtrack matching
   simTrackCfg = (iConfig.getParameterSet("simTrackMatching"));
 
-  const auto& displacedGenMu = simTrackCfg.getParameter<edm::ParameterSet>("displacedGenMu");
+  const auto& displacedGenMu = simTrackCfg.getParameterSet("displacedGenMu");
   genParticleInput_ = consumes<reco::GenParticleCollection>(displacedGenMu.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& gemSimHit_ = simTrackCfg.getParameter<edm::ParameterSet>("gemSimHit");
+  const auto& simVertex = simTrackCfg.getParameterSet("simVertex");
+  simVertexInput_ = consumes<edm::SimVertexContainer>(simVertex.getParameter<edm::InputTag>("inputTag"));
+
+  const auto& simTrack = simTrackCfg.getParameterSet("simTrack");
+  simTrackInput_ = consumes<edm::SimTrackContainer>(simTrack.getParameter<edm::InputTag>("inputTag"));
+
+  const auto& gemSimHit_ = simTrackCfg.getParameterSet("gemSimHit");
   gemSimHitInput_ = consumes<edm::PSimHitContainer>(gemSimHit_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& cscSimHit_= simTrackCfg.getParameter<edm::ParameterSet>("cscSimHit");
+  const auto& cscSimHit_= simTrackCfg.getParameterSet("cscSimHit");
   cscSimHitInput_ = consumes<edm::PSimHitContainer>(cscSimHit_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& me0SimHit_ = simTrackCfg.getParameter<edm::ParameterSet>("me0SimHit");
+  const auto& me0SimHit_ = simTrackCfg.getParameterSet("me0SimHit");
   me0SimHitInput_ = consumes<edm::PSimHitContainer>(me0SimHit_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& rpcSimHit_ = simTrackCfg.getParameter<edm::ParameterSet>("rpcSimHit");
+  const auto& rpcSimHit_ = simTrackCfg.getParameterSet("rpcSimHit");
   rpcSimHitInput_ = consumes<edm::PSimHitContainer>(rpcSimHit_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& dtSimHit_ = simTrackCfg.getParameter<edm::ParameterSet>("dtSimHit");
+  const auto& dtSimHit_ = simTrackCfg.getParameterSet("dtSimHit");
   dtSimHitInput_ = consumes<edm::PSimHitContainer>(dtSimHit_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& gemDigi_= simTrackCfg.getParameter<edm::ParameterSet>("gemStripDigi");
+  const auto& gemDigi_= simTrackCfg.getParameterSet("gemStripDigi");
   gemDigiInput_ = consumes<GEMDigiCollection>(gemDigi_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& gemPad_= simTrackCfg.getParameter<edm::ParameterSet>("gemPadDigi");
+  const auto& gemPad_= simTrackCfg.getParameterSet("gemPadDigi");
   gemPadDigiInput_ = consumes<GEMPadDigiCollection>(gemPad_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& gemCoPad_= simTrackCfg.getParameter<edm::ParameterSet>("gemCoPadDigi");
+  const auto& gemCoPad_= simTrackCfg.getParameterSet("gemCoPadDigi");
   gemCoPadDigiInput_ = consumes<GEMCoPadDigiCollection>(gemCoPad_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& gemRecHit_= simTrackCfg.getParameter<edm::ParameterSet>("gemRecHit");
+  const auto& gemRecHit_= simTrackCfg.getParameterSet("gemRecHit");
   gemRecHitInput_ = consumes<GEMRecHitCollection>(gemRecHit_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& me0Digi_= simTrackCfg.getParameter<edm::ParameterSet>("me0DigiPreReco");
+  const auto& me0Digi_= simTrackCfg.getParameterSet("me0DigiPreReco");
   me0DigiInput_ = consumes<ME0DigiPreRecoCollection>(me0Digi_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& me0RecHit_ = simTrackCfg.getParameter<edm::ParameterSet>("me0RecHit");
+  const auto& me0RecHit_ = simTrackCfg.getParameterSet("me0RecHit");
   me0RecHitInput_ = consumes<ME0RecHitCollection>(me0RecHit_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& me0Segment_ = simTrackCfg.getParameter<edm::ParameterSet>("me0Segment");
+  const auto& me0Segment_ = simTrackCfg.getParameterSet("me0Segment");
   me0SegmentInput_ = consumes<ME0SegmentCollection>(me0Segment_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& cscComparatorDigi = simTrackCfg.getParameter<edm::ParameterSet>("cscStripDigi");
+  const auto& cscComparatorDigi = simTrackCfg.getParameterSet("cscStripDigi");
   cscComparatorDigiInput_ = consumes<CSCComparatorDigiCollection>(cscComparatorDigi.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& cscWireDigi = simTrackCfg.getParameter<edm::ParameterSet>("cscWireDigi");
+  const auto& cscWireDigi = simTrackCfg.getParameterSet("cscWireDigi");
   cscWireDigiInput_ = consumes<CSCWireDigiCollection>(cscWireDigi.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& cscCLCT = simTrackCfg.getParameter<edm::ParameterSet>("cscCLCT");
+  const auto& cscCLCT = simTrackCfg.getParameterSet("cscCLCT");
   clctInputs_ = consumes<CSCCLCTDigiCollection>(cscCLCT.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& cscALCT = simTrackCfg.getParameter<edm::ParameterSet>("cscALCT");
+  const auto& cscALCT = simTrackCfg.getParameterSet("cscALCT");
   alctInputs_ = consumes<CSCALCTDigiCollection>(cscALCT.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& cscLCT = simTrackCfg.getParameter<edm::ParameterSet>("cscLCT");
+  const auto& cscLCT = simTrackCfg.getParameterSet("cscLCT");
   lctInputs_ = consumes<CSCCorrelatedLCTDigiCollection>(cscLCT.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& cscMPLCT = simTrackCfg.getParameter<edm::ParameterSet>("cscMPLCT");
+  const auto& cscMPLCT = simTrackCfg.getParameterSet("cscMPLCT");
   mplctInputs_ = consumes<CSCCorrelatedLCTDigiCollection>(cscMPLCT.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& cscRecHit2D = simTrackCfg.getParameter<edm::ParameterSet>("cscRecHit");
+  const auto& cscRecHit2D = simTrackCfg.getParameterSet("cscRecHit");
   cscRecHit2DInput_ = consumes<CSCRecHit2DCollection>(cscRecHit2D.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& cscSegment2D = simTrackCfg.getParameter<edm::ParameterSet>("cscSegment");
+  const auto& cscSegment2D = simTrackCfg.getParameterSet("cscSegment");
   cscSegmentInput_ = consumes<CSCSegmentCollection>(cscSegment2D.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& dtDigi_= simTrackCfg.getParameter<edm::ParameterSet>("dtDigi");
+  const auto& dtDigi_= simTrackCfg.getParameterSet("dtDigi");
   dtDigiInput_ = consumes<DTDigiCollection>(dtDigi_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& dtStub_= simTrackCfg.getParameter<edm::ParameterSet>("dtLocalTrigger");
+  const auto& dtStub_= simTrackCfg.getParameterSet("dtLocalTrigger");
   dtStubInput_ = consumes<DTLocalTriggerCollection>(dtStub_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& dtRecHit1DPair = simTrackCfg.getParameter<edm::ParameterSet>("dtRecHit");
+  const auto& dtRecHit1DPair = simTrackCfg.getParameterSet("dtRecHit");
   dtRecHit1DPairInput_ = consumes<DTRecHitCollection>(dtRecHit1DPair.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& dtSegment2D = simTrackCfg.getParameter<edm::ParameterSet>("dtRecSegment2D");
+  const auto& dtSegment2D = simTrackCfg.getParameterSet("dtRecSegment2D");
   dtRecSegment2DInput_ = consumes<DTRecSegment2DCollection>(dtSegment2D.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& dtSegment4D = simTrackCfg.getParameter<edm::ParameterSet>("dtRecSegment4D");
+  const auto& dtSegment4D = simTrackCfg.getParameterSet("dtRecSegment4D");
   dtRecSegment4DInput_ = consumes<DTRecSegment4DCollection>(dtSegment4D.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& rpcDigi_= simTrackCfg.getParameter<edm::ParameterSet>("rpcStripDigi");
+  const auto& rpcDigi_= simTrackCfg.getParameterSet("rpcStripDigi");
   rpcDigiInput_ = consumes<RPCDigiCollection>(rpcDigi_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& rpcRecHit_= simTrackCfg.getParameter<edm::ParameterSet>("rpcRecHit");
+  const auto& rpcRecHit_= simTrackCfg.getParameterSet("rpcRecHit");
   rpcRecHitInput_ = consumes<RPCRecHitCollection>(rpcRecHit_.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& emtfTrack = simTrackCfg.getParameter<edm::ParameterSet>("upgradeEmtfTrack");
+  const auto& emtfTrack = simTrackCfg.getParameterSet("upgradeEmtfTrack");
   emtfTrackInputLabel_ = consumes<l1t::EMTFTrackCollection>(emtfTrack.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& upgradeemtfCand = simTrackCfg.getParameter<edm::ParameterSet>("upgradeEmtfCand");
+  const auto& upgradeemtfCand = simTrackCfg.getParameterSet("upgradeEmtfCand");
   regMuonCandInputLabel_ = consumes< BXVector<l1t::RegionalMuonCand> >(upgradeemtfCand.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& upgradegmt = simTrackCfg.getParameter<edm::ParameterSet>("upgradeGMT");
+  const auto& upgradegmt = simTrackCfg.getParameterSet("upgradeGMT");
   gmtInputLabel_ = consumes< BXVector<l1t::Muon> >(upgradegmt.getParameter<edm::InputTag>("inputTag"));
 
-  //const auto& l1Track = simTrackCfg.getParameter<edm::ParameterSet>("l1track");
+  //const auto& l1Track = simTrackCfg.getParameterSet("l1track");
   //trackInputLabel_ = consumes<L1TTTrackCollectionType>(l1Track.getParameter<edm::InputTag>("inputTag"));
   //verboseL1Track_ = l1Track.getParameter<int>("verbose");
 
-  //const auto& l1TrackMuon = simTrackCfg.getParameter<edm::ParameterSet>("l1tkmuon");
+  //const auto& l1TrackMuon = simTrackCfg.getParameterSet("l1tkmuon");
   //trackMuonInputLabel_ = consumes<l1t::L1TkMuonParticleCollection>(l1TrackMuon.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& recoTrackExtra = simTrackCfg.getParameter<edm::ParameterSet>("recoTrackExtra");
+  const auto& recoTrackExtra = simTrackCfg.getParameterSet("recoTrackExtra");
   recoTrackExtraInputLabel_ = consumes<reco::TrackExtraCollection>(recoTrackExtra.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& recoTrack = simTrackCfg.getParameter<edm::ParameterSet>("recoTrack");
+  const auto& recoTrack = simTrackCfg.getParameterSet("recoTrack");
   recoTrackInputLabel_ = consumes<reco::TrackCollection>(recoTrack.getParameter<edm::InputTag>("inputTag"));
 
-  const auto& recoChargedCandidate = simTrackCfg.getParameter<edm::ParameterSet>("recoChargedCandidate");
+  const auto& recoChargedCandidate = simTrackCfg.getParameterSet("recoChargedCandidate");
   recoChargedCandidateInputLabel_ = consumes<reco::RecoChargedCandidateCollection>(recoChargedCandidate.getParameter<edm::InputTag>("inputTag"));
 
 }

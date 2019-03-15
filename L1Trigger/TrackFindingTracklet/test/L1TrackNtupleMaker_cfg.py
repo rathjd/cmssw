@@ -19,17 +19,21 @@ process.load('Configuration.StandardSequences.Services_cff')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
+process.load('TrackPropagation.SteppingHelixPropagator.SteppingHelixPropagatorOpposite_cfi')
+process.load('TrackPropagation.SteppingHelixPropagator.SteppingHelixPropagatorAlong_cfi')
 
-if GEOMETRY == "D10": 
+from GEMCode.GEMValidation.simTrackMatching_cfi import SimTrackMatching
+
+if GEOMETRY == "D10":
     print "using geometry " + GEOMETRY + " (flat)"
     process.load('Configuration.Geometry.GeometryExtended2023D10Reco_cff')
     process.load('Configuration.Geometry.GeometryExtended2023D10_cff')
 elif GEOMETRY == "D17":
     print "using geometry " + GEOMETRY + " (tilted)"
-    process.load('Configuration.Geometry.GeometryExtended2023D17Reco_cff')
-    process.load('Configuration.Geometry.GeometryExtended2023D17_cff')
-elif GEOMETRY == "TkOnly": 
-    print "using standalone tilted (T5) tracker geometry" 
+    process.load('Configuration.Geometry.GeometryExtended2023D35Reco_cff')
+    process.load('Configuration.Geometry.GeometryExtended2023D35_cff')
+elif GEOMETRY == "TkOnly":
+    print "using standalone tilted (T5) tracker geometry"
     process.load('L1Trigger.TrackTrigger.TkOnlyTiltedGeom_cff')
 else:
     print "this is not a valid geometry!!!"
@@ -58,8 +62,9 @@ process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 if GEOMETRY == "D17":
     #D17 (tilted barrel -- latest and greatest with T5 tracker, see: https://github.com/cms-sw/cmssw/blob/CMSSW_9_3_0_pre2/Configuration/Geometry/README.md)
     Source_Files = cms.untracked.vstring(
-    #"/store/relval/CMSSW_9_3_7/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU25ns_93X_upgrade2023_realistic_v5_2023D17PU200-v1/10000/5A8CFF7F-1E2D-E811-A7B0-0242AC130002.root"
-    options.inputFile
+    '/store/mc/PhaseIIMTDTDRAutumn18DR/DYToLL_M-50_14TeV_TuneCP5_pythia8/FEVT/PU200_103X_upgrade2023_realistic_v2-v2/90000/F7EA0699-B997-F949-8775-FC5EBA1A389F.root'
+#"/store/relval/CMSSW_9_3_7/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU25ns_93X_upgrade2023_realistic_v5_2023D17PU200-v1/10000/5A8CFF7F-1E2D-E811-A7B0-0242AC130002.root"
+#    options.inputFile
     )
 elif GEOMETRY == "TkOnly":
     Source_Files = cms.untracked.vstring(
@@ -122,6 +127,7 @@ process.TTTracksEmulationWithTruth = cms.Path(process.L1TrackletEmulationTracksW
 ############################################################
 
 process.L1TrackNtuple = cms.EDAnalyzer('L1TrackNtupleMaker',
+                                       simTrackMatching = SimTrackMatching,
                                        MyProcess = cms.int32(1),
                                        DebugMode = cms.bool(False),      # printout lots of debug statements
                                        SaveAllTracks = cms.bool(True),   # save *all* L1 tracks, not just truth matched to primary particle
