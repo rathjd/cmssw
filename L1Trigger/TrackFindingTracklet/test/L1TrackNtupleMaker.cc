@@ -1401,6 +1401,27 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
     // get the associated simtrack
     const SimTrack& t(tp_ptr->g4Tracks()[0]);
 
+
+    // SimTrack selection
+    if (t.noVertex()) continue;
+    if (t.noGenpart()) continue;
+    // only muons
+    if (std::abs(t.type()) != 13) continue;
+    // pt selection
+    if (t.momentum().pt() < 2) continue;
+    // eta selection
+    const float eta(std::abs(t.momentum().eta()));
+    if (eta > 2.5) continue;
+
+
+    if (1){
+      std::cout << "Processing SimTrack " << this_tp << std::endl;
+      std::cout << "pt (GeV) = " << t.momentum().pt() << ", eta = " << t.momentum().eta()
+                << ", phi = " << t.momentum().phi() << ", Q = " << t.charge() << std::endl;
+    }
+
+
+
     SimTrackMatchManager match(t, sim_vert[t.vertIndex()], simTrackCfg, iEvent, iSetup,
                                genParticleInput_,
                                simVertexInput_,
