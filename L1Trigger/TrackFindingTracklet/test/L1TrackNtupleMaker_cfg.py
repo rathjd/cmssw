@@ -8,8 +8,15 @@ import sys
 import FWCore.ParameterSet.VarParsing as VarParsing
 process = cms.Process("L1TrackNtuple")
 
-GEOMETRY = "D17"
+options = VarParsing.VarParsing ('standard')
+options.register('inputFile', 'file1.root', VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string, "input file path")
+options.register('outputFile','file1.root', VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string, "output file path")
+options.register('GEOMETRY','D35', VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string, "geometry")
 
+options.parseArguments()
+
+print("infile: ", options.inputFile)
+print("outfile: ", options.outputFile)
  
 ############################################################
 # import standard configurations
@@ -24,15 +31,19 @@ process.load('TrackPropagation.SteppingHelixPropagator.SteppingHelixPropagatorAl
 
 from GEMCode.GEMValidation.simTrackMatching_cfi import SimTrackMatching
 
-if GEOMETRY == "D10":
-    print "using geometry " + GEOMETRY + " (flat)"
+if options.GEOMETRY == "D10":
+    print "using geometry " + options.GEOMETRY + " (flat)"
     process.load('Configuration.Geometry.GeometryExtended2023D10Reco_cff')
     process.load('Configuration.Geometry.GeometryExtended2023D10_cff')
-elif GEOMETRY == "D17":
-    print "using geometry " + GEOMETRY + " (tilted)"
+elif options.GEOMETRY == "D17":
+    print "using geometry " + options.GEOMETRY + " (tilted)"
+    process.load('Configuration.Geometry.GeometryExtended2023D17Reco_cff')
+    process.load('Configuration.Geometry.GeometryExtended2023D17_cff')
+elif options.GEOMETRY == "D35":
+    print "using geometry " + options.GEOMETRY + " (tilted)"
     process.load('Configuration.Geometry.GeometryExtended2023D35Reco_cff')
     process.load('Configuration.Geometry.GeometryExtended2023D35_cff')
-elif GEOMETRY == "TkOnly":
+elif options.GEOMETRY == "TkOnly":
     print "using standalone tilted (T5) tracker geometry"
     process.load('L1Trigger.TrackTrigger.TkOnlyTiltedGeom_cff')
 else:
@@ -44,33 +55,41 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
 
-options = VarParsing.VarParsing ('standard')
-options.register('inputFile', 'file1.root', VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string, "input file path")
-options.register('outputFile','file1.root', VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string, "output file path")
 
-options.parseArguments()
 
-print("infile: ", options.inputFile)
-print("outfile: ", options.outputFile)
+
 
 ############################################################
 # input and output
 ############################################################
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(10))
 
-if GEOMETRY == "D17":
+if options.GEOMETRY == "D35":
     #D17 (tilted barrel -- latest and greatest with T5 tracker, see: https://github.com/cms-sw/cmssw/blob/CMSSW_9_3_0_pre2/Configuration/Geometry/README.md)
     Source_Files = cms.untracked.vstring(
     '/store/mc/PhaseIIMTDTDRAutumn18DR/DYToLL_M-50_14TeV_TuneCP5_pythia8/FEVT/PU200_103X_upgrade2023_realistic_v2-v2/90000/F7EA0699-B997-F949-8775-FC5EBA1A389F.root'
 #"/store/relval/CMSSW_9_3_7/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU25ns_93X_upgrade2023_realistic_v5_2023D17PU200-v1/10000/5A8CFF7F-1E2D-E811-A7B0-0242AC130002.root"
 #    options.inputFile
     )
-elif GEOMETRY == "TkOnly":
+elif options.GEOMETRY == "D17":
+    #D17 (tilted barrel -- latest and greatest with T5 tracker, see: https://github.com/cms-sw/cmssw/blob/CMSSW_9_3_0_pre2/Configuration/Geometry/README.md)
+    Source_Files = cms.untracked.vstring(
+    #"/store/relval/CMSSW_9_3_7/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU25ns_93X_upgrade2023_realistic_v5_2023D17PU200-v1/10000/5A8CFF7F-1E2D-E811-A7B0-0242AC130002.root"
+    options.inputFile
+    )
+elif options.GEOMETRY == "TkOnly":
     Source_Files = cms.untracked.vstring(
     "file:/afs/cern.ch/work/s/skinnari/public/L1TK_90X/MuMinus_1to10_TkOnly.root"
     )
-process.source = cms.Source("PoolSource", fileNames = Source_Files)
+if options.GEOMETRY == "D17": process.source = cms.Source("PoolSource", fileNames = Source_Files, inputCommands = cms.untracked.vstring(
+                              'keep *_*_*_*',
+                              'drop l1tEMTFHit2016*_*_*_*',
+                              'drop l1tEMTFTrack2016*_*_*_*'
+                            )
+  )
+else:
+   process.source = cms.Source("PoolSource", fileNames = Source_Files)
 
 process.TFileService = cms.Service("TFileService", fileName = cms.string(options.outputFile), closeFileFast = cms.untracked.bool(True))
 
@@ -85,10 +104,10 @@ process.load('L1Trigger.TrackTrigger.TrackTrigger_cff')
 from L1Trigger.TrackTrigger.TTStubAlgorithmRegister_cfi import *
 process.load("SimTracker.TrackTriggerAssociation.TrackTriggerAssociator_cff")
 
-if GEOMETRY == "D10": 
+if options.GEOMETRY == "D10": 
     TTStubAlgorithm_official_Phase2TrackerDigi_.zMatchingPS = cms.bool(False)
 
-if GEOMETRY != "TkOnly":
+if options.GEOMETRY != "TkOnly":
     from SimTracker.TrackTriggerAssociation.TTClusterAssociation_cfi import *
     TTClusterAssociatorFromPixelDigis.digiSimLinks = cms.InputTag("simSiPixelDigis","Tracker")
 
@@ -99,7 +118,7 @@ from L1Trigger.TrackFindingTracklet.Tracklet_cfi import *
 
 ### floating-point version
 #process.load("L1Trigger.TrackFindingTracklet.L1TrackletTracks_cff")
-#if GEOMETRY == "D10": 
+#if options.GEOMETRY == "D10": 
 #    TTTracksFromTracklet.trackerGeometry = cms.untracked.string("flat")
 #TTTracksFromTracklet.asciiFileName = cms.untracked.string("evlist.txt")
 #TTTracksFromTracklet.failscenario = cms.untracked.int32(0)

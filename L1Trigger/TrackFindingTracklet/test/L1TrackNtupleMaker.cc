@@ -357,6 +357,12 @@ private:
   std::vector<float>* m_BMTF_muon_phi;
   std::vector<int>*   m_BMTF_muon_c;
 
+  std::vector<float>* m_matchmuon_pt;
+  std::vector<float>* m_matchmuon_eta;
+  std::vector<float>* m_matchmuon_phi;
+  std::vector<int>*   m_matchmuon_charge;
+  std::vector<int>*   m_matchmuon_type;
+
 };
 
 
@@ -627,6 +633,12 @@ void L1TrackNtupleMaker::beginJob()
   m_loosematchtrk_injet_highpt = new std::vector<int>;
   m_loosematchtrk_injet_vhighpt = new std::vector<int>;
 
+  m_matchmuon_pt     = new std::vector<float>;
+  m_matchmuon_eta    = new std::vector<float>;
+  m_matchmuon_phi    = new std::vector<float>;
+  m_matchmuon_charge = new std::vector<int>;
+  m_matchmuon_type   = new std::vector<int>;
+
   m_allstub_x = new std::vector<float>;
   m_allstub_y = new std::vector<float>;
   m_allstub_z = new std::vector<float>;
@@ -751,6 +763,14 @@ void L1TrackNtupleMaker::beginJob()
     eventTree->Branch("loosematchtrk_injet",         &m_loosematchtrk_injet);
     eventTree->Branch("loosematchtrk_injet_highpt",  &m_loosematchtrk_injet_highpt);
     eventTree->Branch("loosematchtrk_injet_vhighpt", &m_loosematchtrk_injet_vhighpt);
+  }
+
+  if (SaveMuons){
+    eventTree->Branch("matchmuon_pt", &m_matchmuon_pt);
+    eventTree->Branch("matchmuon_eta", &m_matchmuon_eta);
+    eventTree->Branch("matchmuon_phi", &m_matchmuon_phi);
+    eventTree->Branch("matchmuon_charge",&m_matchmuon_charge);
+    eventTree->Branch("matchmuon_type",&m_matchmuon_type);
   }
 
   if (SaveStubs) {
@@ -894,6 +914,12 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
   m_loosematchtrk_injet->clear();
   m_loosematchtrk_injet_highpt->clear();
   m_loosematchtrk_injet_vhighpt->clear();
+
+  m_matchmuon_pt->clear();
+  m_matchmuon_eta->clear();
+  m_matchmuon_phi->clear();
+  m_matchmuon_charge->clear();
+  m_matchmuon_type->clear();
 
   if (SaveStubs) {
     m_allstub_x->clear();
@@ -1388,7 +1414,6 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
   iEvent.getByToken(simVertexInput_, sim_vertices);
   const edm::SimVertexContainer & sim_vert = *sim_vertices.product();
 
-
   if (DebugMode) cout << endl << "Loop over tracking particles!" << endl;
 
   int this_tp = 0;
@@ -1398,11 +1423,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
     edm::Ptr< TrackingParticle > tp_ptr(TrackingParticleHandle, this_tp);
     this_tp++;
 
-    // get the associated simtrack
-    const SimTrack& t(tp_ptr->g4Tracks()[0]);
-
-
-    // SimTrack selection
+    /*// SimTrack selection
     if (t.noVertex()) continue;
     if (t.noGenpart()) continue;
     // only muons
@@ -1418,52 +1439,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
       std::cout << "Processing SimTrack " << this_tp << std::endl;
       std::cout << "pt (GeV) = " << t.momentum().pt() << ", eta = " << t.momentum().eta()
                 << ", phi = " << t.momentum().phi() << ", Q = " << t.charge() << std::endl;
-    }
-
-
-
-    SimTrackMatchManager match(t, sim_vert[t.vertIndex()], simTrackCfg, iEvent, iSetup,
-                               genParticleInput_,
-                               simVertexInput_,
-                               simTrackInput_,
-                               gemSimHitInput_,
-                               cscSimHitInput_,
-                               rpcSimHitInput_,
-                               me0SimHitInput_,
-                               dtSimHitInput_,
-                               gemDigiInput_,
-                               gemPadDigiInput_,
-                               gemCoPadDigiInput_,
-                               gemRecHitInput_,
-                               me0DigiInput_,
-                               me0RecHitInput_,
-                               me0SegmentInput_,
-                               cscComparatorDigiInput_,
-                               cscWireDigiInput_,
-                               clctInputs_,
-                               alctInputs_,
-                               lctInputs_,
-                               mplctInputs_,
-                               cscRecHit2DInput_,
-                               cscSegmentInput_,
-                               dtDigiInput_,
-                               dtStubInput_,
-                               dtRecHit1DPairInput_,
-                               dtRecSegment2DInput_,
-                               dtRecSegment4DInput_,
-                               rpcDigiInput_,
-                               rpcRecHitInput_,
-                               emtfTrackInputLabel_,
-                               regMuonCandInputLabel_,
-                               gmtInputLabel_,
-                               //trackInputLabel_,
-                               //trackMuonInputLabel_,
-                               recoTrackExtraInputLabel_,
-                               recoTrackInputLabel_,
-                               recoChargedCandidateInputLabel_
-                               );
-
-
+    }*/
 
     int tmp_eventid = iterTP->eventId().event();
     if (MyProcess != 1 && tmp_eventid > 0) continue; //only care about tracking particles from the primary interaction (except for MyProcess==1, i.e. looking at all TPs)
@@ -1594,6 +1570,88 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
 	continue;
       }
     }
+
+
+    // ----------------------------------------------------------------------------------------------
+    // look for L1 regional muon candidates matched to the tracking particle
+
+    // get the associated simtrack
+    const SimTrack& t(tp_ptr->g4Tracks()[0]);
+    if(abs(t.type())==13){
+      //run arcane muon simulation truth matching
+      SimTrackMatchManager match(t, sim_vert[t.vertIndex()], simTrackCfg, iEvent, iSetup,
+                               genParticleInput_,
+                               simVertexInput_,
+                               simTrackInput_,
+                               gemSimHitInput_,
+                               cscSimHitInput_,
+                               rpcSimHitInput_,
+                               me0SimHitInput_,
+                               dtSimHitInput_,
+                               gemDigiInput_,
+                               gemPadDigiInput_,
+                               gemCoPadDigiInput_,
+                               gemRecHitInput_,
+                               me0DigiInput_,
+                               me0RecHitInput_,
+                               me0SegmentInput_,
+                               cscComparatorDigiInput_,
+                               cscWireDigiInput_,
+                               clctInputs_,
+                               alctInputs_,
+                               lctInputs_,
+                               mplctInputs_,
+                               cscRecHit2DInput_,
+                               cscSegmentInput_,
+                               dtDigiInput_,
+                               dtStubInput_,
+                               dtRecHit1DPairInput_,
+                               dtRecSegment2DInput_,
+                               dtRecSegment4DInput_,
+                               rpcDigiInput_,
+                               rpcRecHitInput_,
+                               emtfTrackInputLabel_,
+                               regMuonCandInputLabel_,
+                               gmtInputLabel_,
+                               //trackInputLabel_,
+                               //trackMuonInputLabel_,
+                               recoTrackExtraInputLabel_,
+                               recoTrackInputLabel_,
+                               recoChargedCandidateInputLabel_
+                               );
+
+      //access best match
+      TFCand *muonCandidate = match.l1Muons().bestGMTCand();
+      std::cout<<"found muon, try to get match"<<std::endl;
+      //if best regional match exists, dump info
+      if(muonCandidate){
+	std::cout<<"found match, extract information"<<std::endl;
+        m_matchmuon_pt->push_back(muonCandidate->pt());
+        m_matchmuon_eta->push_back(muonCandidate->eta());
+        m_matchmuon_phi->push_back(muonCandidate->phi());
+        m_matchmuon_charge->push_back(muonCandidate->charge());
+        int type=-1;
+        if(muonCandidate->tracktype()==l1t::tftype::bmtf) type=2;
+        else if(muonCandidate->tracktype()==l1t::tftype::omtf_pos || muonCandidate->tracktype()==l1t::tftype::omtf_neg) type=1;
+        else if(muonCandidate->tracktype()==l1t::tftype::emtf_pos || muonCandidate->tracktype()==l1t::tftype::emtf_neg) type=0;
+        m_matchmuon_type->push_back(type);
+      }
+      else{
+        m_matchmuon_pt->push_back(-999.);
+        m_matchmuon_eta->push_back(-999.);
+        m_matchmuon_phi->push_back(-999.);
+        m_matchmuon_charge->push_back(-999);
+        m_matchmuon_type->push_back(-999);
+      }
+    }
+    else{
+      m_matchmuon_pt->push_back(-999.);
+      m_matchmuon_eta->push_back(-999.);
+      m_matchmuon_phi->push_back(-999.);
+      m_matchmuon_charge->push_back(-999);
+      m_matchmuon_type->push_back(-999);
+    }
+    
 
 
     // ----------------------------------------------------------------------------------------------
