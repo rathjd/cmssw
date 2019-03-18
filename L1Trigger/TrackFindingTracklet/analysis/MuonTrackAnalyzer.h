@@ -85,6 +85,11 @@ public :
    vector<int>     *loosematchtrk_injet;
    vector<int>     *loosematchtrk_injet_highpt;
    vector<int>     *loosematchtrk_injet_vhighpt;
+   vector<float>   *matchmuon_pt;
+   vector<float>   *matchmuon_eta;
+   vector<float>   *matchmuon_phi;
+   vector<int>     *matchmuon_charge;
+   vector<int>     *matchmuon_type;
    vector<float>   *jet_eta;
    vector<float>   *jet_phi;
    vector<float>   *jet_pt;
@@ -171,6 +176,11 @@ public :
    TBranch        *b_loosematchtrk_injet;   //!
    TBranch        *b_loosematchtrk_injet_highpt;   //!
    TBranch        *b_loosematchtrk_injet_vhighpt;   //!
+   TBranch	  *b_matchmuon_pt; //!
+   TBranch	  *b_matchmuon_eta; //!
+   TBranch	  *b_matchmuon_phi; //!
+   TBranch	  *b_matchmuon_charge; //!
+   TBranch	  *b_matchmuon_type; //!
    TBranch        *b_jet_eta;   //!
    TBranch        *b_jet_phi;   //!
    TBranch        *b_jet_pt;   //!
@@ -326,6 +336,11 @@ void MuonTrackAnalyzer::Init(TTree *tree)
    loosematchtrk_injet = 0;
    loosematchtrk_injet_highpt = 0;
    loosematchtrk_injet_vhighpt = 0;
+   matchmuon_pt = 0;
+   matchmuon_eta = 0;
+   matchmuon_phi = 0;
+   matchmuon_charge = 0;
+   matchmuon_type = 0;
    jet_eta = 0;
    jet_phi = 0;
    jet_pt = 0;
@@ -416,6 +431,11 @@ void MuonTrackAnalyzer::Init(TTree *tree)
    fChain->SetBranchAddress("loosematchtrk_injet", &loosematchtrk_injet, &b_loosematchtrk_injet);
    fChain->SetBranchAddress("loosematchtrk_injet_highpt", &loosematchtrk_injet_highpt, &b_loosematchtrk_injet_highpt);
    fChain->SetBranchAddress("loosematchtrk_injet_vhighpt", &loosematchtrk_injet_vhighpt, &b_loosematchtrk_injet_vhighpt);
+   fChain->SetBranchAddress("matchmuon_pt", &matchmuon_pt, &b_matchmuon_pt);
+   fChain->SetBranchAddress("matchmuon_eta", &matchmuon_eta, &b_matchmuon_eta);
+   fChain->SetBranchAddress("matchmuon_phi", &matchmuon_phi, &b_matchmuon_phi);
+   fChain->SetBranchAddress("matchmuon_charge", &matchmuon_charge, &b_matchmuon_charge);
+   fChain->SetBranchAddress("matchmuon_type", &matchmuon_type, &b_matchmuon_type);
    fChain->SetBranchAddress("jet_eta", &jet_eta, &b_jet_eta);
    fChain->SetBranchAddress("jet_phi", &jet_phi, &b_jet_phi);
    fChain->SetBranchAddress("jet_pt", &jet_pt, &b_jet_pt);
