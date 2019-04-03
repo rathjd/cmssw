@@ -241,6 +241,7 @@ private:
   std::vector<float>* m_trk_pt;
   std::vector<float>* m_trk_eta;
   std::vector<float>* m_trk_phi;
+  std::vector<int>*   m_trk_charge;
   std::vector<float>* m_trk_d0;   // (filled if L1Tk_nPar==5, else 999)
   std::vector<float>* m_trk_z0;
   std::vector<float>* m_trk_chi2;
@@ -362,6 +363,7 @@ private:
   std::vector<float>* m_matchmuon_phi;
   std::vector<int>*   m_matchmuon_charge;
   std::vector<int>*   m_matchmuon_type;
+  std::vector<int>*   m_matchmuon_quality;
 
 };
 
@@ -570,6 +572,7 @@ void L1TrackNtupleMaker::beginJob()
   m_trk_pt    = new std::vector<float>;
   m_trk_eta   = new std::vector<float>;
   m_trk_phi   = new std::vector<float>;
+  m_trk_charge= new std::vector<int>;
   m_trk_z0    = new std::vector<float>;
   m_trk_d0    = new std::vector<float>;
   m_trk_chi2  = new std::vector<float>;
@@ -638,6 +641,7 @@ void L1TrackNtupleMaker::beginJob()
   m_matchmuon_phi    = new std::vector<float>;
   m_matchmuon_charge = new std::vector<int>;
   m_matchmuon_type   = new std::vector<int>;
+  m_matchmuon_quality= new std::vector<int>;
 
   m_allstub_x = new std::vector<float>;
   m_allstub_y = new std::vector<float>;
@@ -693,6 +697,7 @@ void L1TrackNtupleMaker::beginJob()
     eventTree->Branch("trk_pt",    &m_trk_pt);
     eventTree->Branch("trk_eta",   &m_trk_eta);
     eventTree->Branch("trk_phi",   &m_trk_phi);
+    eventTree->Branch("trk_charge",   &m_trk_charge);
     eventTree->Branch("trk_d0",    &m_trk_d0);
     eventTree->Branch("trk_z0",    &m_trk_z0);
     eventTree->Branch("trk_chi2",  &m_trk_chi2);
@@ -771,6 +776,7 @@ void L1TrackNtupleMaker::beginJob()
     eventTree->Branch("matchmuon_phi", &m_matchmuon_phi);
     eventTree->Branch("matchmuon_charge",&m_matchmuon_charge);
     eventTree->Branch("matchmuon_type",&m_matchmuon_type);
+    eventTree->Branch("matchmuon_quality",&m_matchmuon_quality);
   }
 
   if (SaveStubs) {
@@ -851,6 +857,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
     m_trk_pt->clear();
     m_trk_eta->clear();
     m_trk_phi->clear();
+    m_trk_charge->clear();
     m_trk_d0->clear();
     m_trk_z0->clear();
     m_trk_chi2->clear();
@@ -920,6 +927,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
   m_matchmuon_phi->clear();
   m_matchmuon_charge->clear();
   m_matchmuon_type->clear();
+  m_matchmuon_quality->clear();
 
   if (SaveStubs) {
     m_allstub_x->clear();
@@ -1198,6 +1206,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
       float tmp_trk_pt   = iterL1Track->getMomentum(L1Tk_nPar).perp();
       float tmp_trk_eta  = iterL1Track->getMomentum(L1Tk_nPar).eta();
       float tmp_trk_phi  = iterL1Track->getMomentum(L1Tk_nPar).phi();
+      int   tmp_trk_charge=signbit(iterL1Track->getRInv(L1Tk_nPar));
       float tmp_trk_z0   = iterL1Track->getPOCA(L1Tk_nPar).z(); //cm
 
       float tmp_trk_d0 = -999;
@@ -1307,6 +1316,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
       m_trk_pt ->push_back(tmp_trk_pt);
       m_trk_eta->push_back(tmp_trk_eta);
       m_trk_phi->push_back(tmp_trk_phi);
+      m_trk_charge->push_back(tmp_trk_charge);
       m_trk_z0 ->push_back(tmp_trk_z0);
       if (L1Tk_nPar==5) m_trk_d0->push_back(tmp_trk_d0);
       else m_trk_d0->push_back(999.);
@@ -1630,6 +1640,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
         m_matchmuon_eta->push_back(muonCandidate->eta());
         m_matchmuon_phi->push_back(muonCandidate->phi());
         m_matchmuon_charge->push_back(muonCandidate->charge());
+	m_matchmuon_quality->push_back(muonCandidate->quality());
         int type=-1;
         if(muonCandidate->tracktype()==l1t::tftype::bmtf) type=2;
         else if(muonCandidate->tracktype()==l1t::tftype::omtf_pos || muonCandidate->tracktype()==l1t::tftype::omtf_neg) type=1;
@@ -1642,6 +1653,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
         m_matchmuon_phi->push_back(-999.);
         m_matchmuon_charge->push_back(-999);
         m_matchmuon_type->push_back(-999);
+	m_matchmuon_quality->push_back(-999);
       }
     }
     else{
@@ -1650,6 +1662,7 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
       m_matchmuon_phi->push_back(-999.);
       m_matchmuon_charge->push_back(-999);
       m_matchmuon_type->push_back(-999);
+      m_matchmuon_quality->push_back(-999);
     }
     
 

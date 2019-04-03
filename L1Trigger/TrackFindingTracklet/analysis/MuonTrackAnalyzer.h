@@ -26,6 +26,7 @@ public :
    vector<float>   *trk_pt;
    vector<float>   *trk_eta;
    vector<float>   *trk_phi;
+   vector<float>   *trk_charge;
    vector<float>   *trk_d0;
    vector<float>   *trk_z0;
    vector<float>   *trk_chi2;
@@ -90,6 +91,7 @@ public :
    vector<float>   *matchmuon_phi;
    vector<int>     *matchmuon_charge;
    vector<int>     *matchmuon_type;
+   vector<int>     *matchmuon_quality;
    vector<float>   *jet_eta;
    vector<float>   *jet_phi;
    vector<float>   *jet_pt;
@@ -117,6 +119,7 @@ public :
    TBranch        *b_trk_pt;   //!
    TBranch        *b_trk_eta;   //!
    TBranch        *b_trk_phi;   //!
+   TBranch        *b_trk_charge;   //!
    TBranch        *b_trk_d0;   //!
    TBranch        *b_trk_z0;   //!
    TBranch        *b_trk_chi2;   //!
@@ -181,6 +184,7 @@ public :
    TBranch	  *b_matchmuon_phi; //!
    TBranch	  *b_matchmuon_charge; //!
    TBranch	  *b_matchmuon_type; //!
+   TBranch	  *b_matchmuon_quality; //!
    TBranch        *b_jet_eta;   //!
    TBranch        *b_jet_phi;   //!
    TBranch        *b_jet_pt;   //!
@@ -277,6 +281,7 @@ void MuonTrackAnalyzer::Init(TTree *tree)
    trk_pt = 0;
    trk_eta = 0;
    trk_phi = 0;
+   trk_charge = 0;
    trk_d0 = 0;
    trk_z0 = 0;
    trk_chi2 = 0;
@@ -341,6 +346,7 @@ void MuonTrackAnalyzer::Init(TTree *tree)
    matchmuon_phi = 0;
    matchmuon_charge = 0;
    matchmuon_type = 0;
+   matchmuon_quality = 0;
    jet_eta = 0;
    jet_phi = 0;
    jet_pt = 0;
@@ -372,6 +378,7 @@ void MuonTrackAnalyzer::Init(TTree *tree)
    fChain->SetBranchAddress("trk_pt", &trk_pt, &b_trk_pt);
    fChain->SetBranchAddress("trk_eta", &trk_eta, &b_trk_eta);
    fChain->SetBranchAddress("trk_phi", &trk_phi, &b_trk_phi);
+   fChain->SetBranchAddress("trk_charge", &trk_charge, &b_trk_charge);
    fChain->SetBranchAddress("trk_d0", &trk_d0, &b_trk_d0);
    fChain->SetBranchAddress("trk_z0", &trk_z0, &b_trk_z0);
    fChain->SetBranchAddress("trk_chi2", &trk_chi2, &b_trk_chi2);
@@ -436,6 +443,7 @@ void MuonTrackAnalyzer::Init(TTree *tree)
    fChain->SetBranchAddress("matchmuon_phi", &matchmuon_phi, &b_matchmuon_phi);
    fChain->SetBranchAddress("matchmuon_charge", &matchmuon_charge, &b_matchmuon_charge);
    fChain->SetBranchAddress("matchmuon_type", &matchmuon_type, &b_matchmuon_type);
+   fChain->SetBranchAddress("matchmuon_quality", &matchmuon_quality, &b_matchmuon_quality);
    fChain->SetBranchAddress("jet_eta", &jet_eta, &b_jet_eta);
    fChain->SetBranchAddress("jet_phi", &jet_phi, &b_jet_phi);
    fChain->SetBranchAddress("jet_pt", &jet_pt, &b_jet_pt);
