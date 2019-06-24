@@ -154,11 +154,12 @@ process.L1TrackNtuple = cms.EDAnalyzer('L1TrackNtupleMaker',
 				       SaveMuons = cms.bool(True),	 # save muons
                                        L1Tk_nPar = cms.int32(4),         # use 4 or 5-parameter L1 track fit ??
                                        L1Tk_minNStub = cms.int32(4),     # L1 tracks with >= 4 stubs
-                                       TP_minNStub = cms.int32(4),       # require TP to have >= X number of stubs associated with it
-                                       TP_minNStubLayer = cms.int32(4),  # require TP to have stubs in >= X layers/disks
+                                       TP_minNStub = cms.int32(0),       # require TP to have >= X number of stubs associated with it
+                                       TP_minNStubLayer = cms.int32(0),  # require TP to have stubs in >= X layers/disks
                                        TP_minPt = cms.double(2.0),       # only save TPs with pt > X GeV
                                        TP_maxEta = cms.double(2.5),      # only save TPs with |eta| < X
-                                       TP_maxZ0 = cms.double(30.0),      # only save TPs with |z0| < X cm
+                                       #TP_maxZ0 = cms.double(30.0),      # only save TPs with |z0| < X cm
+				       TP_maxZ0 = cms.double(30000.0),      # only save TPs with |z0| < X cm
                                        #L1TrackInputTag = cms.InputTag("TTTracksFromTracklet", "Level1TTTracks"),                ## TTTrack input
                                        L1TrackInputTag = cms.InputTag("TTTracksFromTrackletEmulation", "Level1TTTracks"),        ## TTTrack input
                                        MCTruthTrackInputTag = cms.InputTag("TTTrackAssociatorFromPixelDigis", "Level1TTTracks"), ## MCTruth input 

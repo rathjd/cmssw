@@ -365,6 +365,10 @@ private:
   std::vector<int>*   m_matchmuon_type;
   std::vector<int>*   m_matchmuon_quality;
 
+  std::vector<float>* m_avgSimHit_phi;
+  std::vector<float>* m_avgSimHit_eta;
+  std::vector<int>*   m_avgSimHit_station;
+
 };
 
 
@@ -643,6 +647,10 @@ void L1TrackNtupleMaker::beginJob()
   m_matchmuon_type   = new std::vector<int>;
   m_matchmuon_quality= new std::vector<int>;
 
+  m_avgSimHit_phi= new std::vector<float>;
+  m_avgSimHit_eta= new std::vector<float>;
+  m_avgSimHit_station=new std::vector<int>;
+
   m_allstub_x = new std::vector<float>;
   m_allstub_y = new std::vector<float>;
   m_allstub_z = new std::vector<float>;
@@ -777,6 +785,10 @@ void L1TrackNtupleMaker::beginJob()
     eventTree->Branch("matchmuon_charge",&m_matchmuon_charge);
     eventTree->Branch("matchmuon_type",&m_matchmuon_type);
     eventTree->Branch("matchmuon_quality",&m_matchmuon_quality);
+
+    eventTree->Branch("avgSimHit_phi",&m_avgSimHit_phi);
+    eventTree->Branch("avgSimHit_eta",&m_avgSimHit_eta);
+    eventTree->Branch("avgSimHit_station",&m_avgSimHit_station);
   }
 
   if (SaveStubs) {
@@ -922,13 +934,6 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
   m_loosematchtrk_injet_highpt->clear();
   m_loosematchtrk_injet_vhighpt->clear();
 
-  m_matchmuon_pt->clear();
-  m_matchmuon_eta->clear();
-  m_matchmuon_phi->clear();
-  m_matchmuon_charge->clear();
-  m_matchmuon_type->clear();
-  m_matchmuon_quality->clear();
-
   if (SaveStubs) {
     m_allstub_x->clear();
     m_allstub_y->clear();
@@ -961,6 +966,17 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
 
   //extra sven muon stuff
   if (SaveMuons) {
+    m_matchmuon_pt->clear();
+    m_matchmuon_eta->clear();
+    m_matchmuon_phi->clear();
+    m_matchmuon_charge->clear();
+    m_matchmuon_type->clear();
+    m_matchmuon_quality->clear();
+
+    m_avgSimHit_phi->clear();
+    m_avgSimHit_eta->clear();
+    m_avgSimHit_station->clear();
+
     m_EMTF_muon_n->clear();
     m_EMTF_muon_pt->clear();
     m_EMTF_muon_eta->clear();
@@ -1424,11 +1440,14 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
   iEvent.getByToken(simVertexInput_, sim_vertices);
   const edm::SimVertexContainer & sim_vert = *sim_vertices.product();
 
+  bool verbose=true;
+
   if (DebugMode) cout << endl << "Loop over tracking particles!" << endl;
 
   int this_tp = 0;
   std::vector< TrackingParticle >::const_iterator iterTP;
   for (iterTP = TrackingParticleHandle->begin(); iterTP != TrackingParticleHandle->end(); ++iterTP) {
+    if(verbose) std::cout<<"tp number "<<this_tp<<std::endl;
 
     edm::Ptr< TrackingParticle > tp_ptr(TrackingParticleHandle, this_tp);
     this_tp++;
@@ -1452,7 +1471,9 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
     }*/
 
     int tmp_eventid = iterTP->eventId().event();
+    if(verbose) std::cout<<"eventId "<<tmp_eventid<<std::endl;
     if (MyProcess != 1 && tmp_eventid > 0) continue; //only care about tracking particles from the primary interaction (except for MyProcess==1, i.e. looking at all TPs)
+    if(verbose) std::cout<<"passed event id"<<std::endl;
 
     float tmp_tp_pt  = iterTP->pt();
     float tmp_tp_eta = iterTP->eta();
@@ -1463,13 +1484,16 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
     int tmp_tp_pdgid = iterTP->pdgId();
     float tmp_tp_z0_prod = tmp_tp_vz;
     float tmp_tp_d0_prod = -tmp_tp_vx*sin(tmp_tp_phi) + tmp_tp_vy*cos(tmp_tp_phi);
+    if(verbose) std::cout<<tmp_tp_pdgid<<": "<<MyProcess<<"tmp_tp_z0"<<std::endl;
 
     if (MyProcess==13 && abs(tmp_tp_pdgid) != 13) continue;
     if (MyProcess==11 && abs(tmp_tp_pdgid) != 11) continue;
     if ((MyProcess==6 || MyProcess==15 || MyProcess==211) && abs(tmp_tp_pdgid) != 211) continue;
+    if(verbose) std::cout<<"passed tp cuts"<<std::endl;
 
     if (tmp_tp_pt < TP_minPt) continue;
     if (fabs(tmp_tp_eta) > TP_maxEta) continue;
+    if(verbose) std::cout<<"passed eta and pt"<<std::endl;
 
 
     // ----------------------------------------------------------------------------------------------
@@ -1502,12 +1526,14 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
     // ----------------------------------------------------------------------------------------------
 
     if (fabs(tmp_tp_z0) > TP_maxZ0) continue;
+    if(verbose) std::cout<<"passed max z0 "<<std::endl;
 
 
     // for pions in ttbar, only consider TPs coming from near the IP!
     float dxy = sqrt(tmp_tp_vx*tmp_tp_vx + tmp_tp_vy*tmp_tp_vy);
     float tmp_tp_dxy = dxy;
     if (MyProcess==6 && (dxy > 1.0)) continue;
+    if(verbose) std::cout<<"passed pion IP cut"<<std::endl;
 
     if (DebugMode) cout << "Tracking particle, pt: " << tmp_tp_pt << " eta: " << tmp_tp_eta << " phi: " << tmp_tp_phi
 			<< " z0: " << tmp_tp_z0 << " d0: " << tmp_tp_d0
@@ -1521,10 +1547,12 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
     // ----------------------------------------------------------------------------------------------
     // only consider TPs associated with >= 1 cluster, or >= X stubs, or have stubs in >= X layers (configurable options)
 
-    if (MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr).size() < 1) {
+    /*if (MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr).size() < 1) {
       if (DebugMode) cout << "No matching TTClusters for TP, continuing..." << endl;
       continue;
-    }
+    }*/
+    //had to be removed to allow for displaced muons with no tracks
+    if(verbose) std::cout<<"passed ClusterRef requirement"<<std::endl;
 
 
     std::vector< edm::Ref< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > >, TTStub< Ref_Phase2TrackerDigi_ > > > theStubRefs = MCTruthTTStubHandle->findTTStubRefs(tp_ptr);
@@ -1630,12 +1658,44 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
                                recoChargedCandidateInputLabel_
                                );
 
+	
+      //added average simhit information at station 2
+      GlobalPoint avgHit1 = match.simhits().simHitsMeanPositionStation(1);
+      GlobalPoint avgHit2 = match.simhits().simHitsMeanPositionStation(2);
+      GlobalPoint avgHit3 = match.simhits().simHitsMeanPositionStation(3);
+      GlobalPoint avgHit4 = match.simhits().simHitsMeanPositionStation(4);
+      if(avgHit2.x() || avgHit2.y() || avgHit2.z()){
+        m_avgSimHit_phi->push_back(avgHit2.phi());
+        m_avgSimHit_eta->push_back(avgHit2.eta());
+	m_avgSimHit_station->push_back(2);
+      }
+      else if(avgHit3.x() || avgHit3.y() || avgHit3.z()){
+        m_avgSimHit_phi->push_back(avgHit3.phi());
+        m_avgSimHit_eta->push_back(avgHit3.eta());
+	m_avgSimHit_station->push_back(3);	
+      }
+      else if(avgHit1.x() || avgHit1.y() || avgHit1.z()){
+        m_avgSimHit_phi->push_back(avgHit1.phi());
+        m_avgSimHit_eta->push_back(avgHit1.eta());
+	m_avgSimHit_station->push_back(1);	
+      }
+      else if(avgHit4.x() || avgHit4.y() || avgHit4.z()){
+        m_avgSimHit_phi->push_back(avgHit4.phi());
+        m_avgSimHit_eta->push_back(avgHit4.eta());
+	m_avgSimHit_station->push_back(4);	
+      }
+      else{
+	m_avgSimHit_phi->push_back(-999.);
+	m_avgSimHit_eta->push_back(-999.);
+	m_avgSimHit_station->push_back(-1);
+      }
+
       //access best match
       TFCand *muonCandidate = match.l1Muons().bestGMTCand();
-      std::cout<<"found muon, try to get match"<<std::endl;
+      //std::cout<<"found muon, try to get match"<<std::endl;
       //if best regional match exists, dump info
       if(muonCandidate){
-	std::cout<<"found match, extract information"<<std::endl;
+	//std::cout<<"found match, extract information"<<std::endl;
         m_matchmuon_pt->push_back(muonCandidate->pt());
         m_matchmuon_eta->push_back(muonCandidate->eta());
         m_matchmuon_phi->push_back(muonCandidate->phi());
@@ -1663,6 +1723,9 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
       m_matchmuon_charge->push_back(-999);
       m_matchmuon_type->push_back(-999);
       m_matchmuon_quality->push_back(-999);
+      m_avgSimHit_phi->push_back(-999.);
+      m_avgSimHit_eta->push_back(-999.);
+      m_avgSimHit_station->push_back(-1);
     }
     
 
