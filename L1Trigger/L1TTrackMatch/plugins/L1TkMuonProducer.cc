@@ -75,6 +75,11 @@ private:
   void runOnMTFCollection_v2(const edm::Handle<EMTFTrackCollection>&,
                           const edm::Handle<L1TTTrackCollectionType>&,
                           L1TkMuonParticleCollection& tkMuons) const;
+			  
+  //algorithm for the whole detector using pT and |eta| dependent windows, choosing closest in pT within window
+  void runOnMTFCollection_v3(const edm::Handle<RegionalMuonCandBxCollection>&,
+                          const edm::Handle<L1TTTrackCollectionType>&,
+                          L1TkMuonParticleCollection& tkMuons, const int detector) const;
 
   float ETAMIN_;
   float ETAMAX_;
@@ -83,6 +88,7 @@ private:
   float PTMINTRA_;
   float DRmax_;
   int nStubsmin_ ;         // minimum number of stubs
+  bool FullDetectorWindows_; //new functionality, overrides old code v1 and v2
   //  bool closest_ ;
   bool correctGMTPropForTkZ_;
   bool use5ParameterFit_;
@@ -115,6 +121,7 @@ L1TkMuonProducer::L1TkMuonProducer(const edm::ParameterSet& iConfig) :
    PTMINTRA_ = (float)iConfig.getParameter<double>("PTMINTRA");
    DRmax_ = (float)iConfig.getParameter<double>("DRmax");
    nStubsmin_ = iConfig.getParameter<int>("nStubsmin");
+   FullDetectorWindows_ =(bool)iConfig.getParameter<bool>("FullDetectorWindows");
    //   closest_ = iConfig.getParameter<bool>("closest");
    // emtfMatchAlgoVersion_ = iConfig.getParameter<int>("emtfMatchAlgoVersion");
 
@@ -198,14 +205,21 @@ L1TkMuonProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   L1TkMuonParticleCollection oc_emtf_tkmuon;
 
   // process each of the MTF collections separately! -- we don't want to filter the muons
-  runOnMTFCollection_v1(l1bmtfH, l1tksH, oc_bmtf_tkmuon,1);
-  runOnMTFCollection_v1(l1omtfH, l1tksH, oc_omtf_tkmuon,2);
-  if(emtfMatchAlgoVersion_ == kTP)
-    runOnMTFCollection_v1(l1emtfH, l1tksH, oc_emtf_tkmuon,3);
-  else if (emtfMatchAlgoVersion_ == kDynamicWindows)
-    runOnMTFCollection_v2(l1emtfTCH, l1tksH, oc_emtf_tkmuon);
-  else
-    throw cms::Exception("TkMuAlgoConfig") << "trying to run an invalid algorithm (this should never happen)\n";
+  if(!FullDetectorWindows_){
+    runOnMTFCollection_v1(l1bmtfH, l1tksH, oc_bmtf_tkmuon,1);
+    runOnMTFCollection_v1(l1omtfH, l1tksH, oc_omtf_tkmuon,2);
+    if(emtfMatchAlgoVersion_ == kTP)
+      runOnMTFCollection_v1(l1emtfH, l1tksH, oc_emtf_tkmuon,3);
+    else if (emtfMatchAlgoVersion_ == kDynamicWindows)
+      runOnMTFCollection_v2(l1emtfTCH, l1tksH, oc_emtf_tkmuon);
+    else
+      throw cms::Exception("TkMuAlgoConfig") << "trying to run an invalid algorithm (this should never happen)\n";
+  }
+  else { //running the current algorithm
+    runOnMTFCollection_v3(l1bmtfH, l1tksH, oc_bmtf_tkmuon,1);
+    runOnMTFCollection_v3(l1omtfH, l1tksH, oc_omtf_tkmuon,2);
+    runOnMTFCollection_v3(l1emtfH, l1tksH, oc_emtf_tkmuon,3);
+  }
 
   // now combine all trk muons into a single output collection!
   std::unique_ptr<L1TkMuonParticleCollection> oc_tkmuon(new L1TkMuonParticleCollection());
@@ -376,6 +390,141 @@ L1TkMuonProducer::runOnMTFCollection_v2(const edm::Handle<EMTFTrackCollection>& 
 
 
   return;
+}
+
+//pT and |eta| dependent windows in DeltaPhi and DeltaEta
+void L1TkMuonProducer::runOnMTFCollection_v3(const edm::Handle<RegionalMuonCandBxCollection>& muonH,
+                                     const edm::Handle<L1TTTrackCollectionType>& l1tksH,
+                                     L1TkMuonParticleCollection& tkMuons,const int detector) const
+{
+  //for now: collection of windows and borders as they are (consider putting these in a config file in the future)
+  const float binsPt[6]={2.,5.,10.,15.,25.,100.};
+  const float binsAbsEta[15]={0.0,0.2,0.4,0.6,0.7,0.9,1.0,1.1,1.2,1.3,1.5,1.7,1.9,2.2,2.5};
+  
+  const float windowPhi[5][14]={{0.4 ,0.4 ,0.4 ,0.53,0.4 ,0.35,0.35,0.2 ,0.2 ,0.2 ,0.2 ,0.2 ,0.2 ,0.2 },
+                                {0.24,0.24,0.24,0.24,0.24,0.16,0.16,0.08,0.08,0.08,0.08,0.08,0.08,0.08},
+                                {0.07,0.1 ,0.06,0.06,0.06,0.06,0.12,0.04,0.04,0.04,0.04,0.04,0.04,0.04},
+                          	{0.04,0.07,0.04,0.04,0.04,0.04,0.05,0.03,0.03,0.03,0.03,0.03,0.03,0.03},
+                          	{0.03,0.04,0.04,0.04,0.04,0.04,0.05,0.02,0.02,0.02,0.02,0.02,0.03,0.03}};
+  const float windowEta[5][14]={{0.1 ,0.1 ,0.15,0.15,0.17,0.34,0.26,0.35,0.35,0.35,0.22,0.22,0.22,0.15},
+                          	{0.07,0.08,0.09,0.09,0.13,0.12,0.15,0.11,0.11,0.08,0.09,0.07,0.07,0.07},
+                          	{0.05,0.05,0.05,0.06,0.06,0.06,0.1 ,0.08,0.06,0.06,0.08,0.06,0.06,0.06},
+                          	{0.05,0.05,0.05,0.05,0.05,0.05,0.07,0.08,0.06,0.06,0.08,0.06,0.06,0.06},
+                          	{0.04,0.04,0.04,0.04,0.04,0.05,0.06,0.08,0.06,0.06,0.08,0.06,0.06,0.06}};
+				     
+  //taken from v1 collection as is
+  const L1TTTrackCollectionType& l1tks = (*l1tksH.product());
+  const RegionalMuonCandBxCollection& l1mtfs = (*muonH.product());
+
+  int imu = 0;
+  for (auto l1mu = l1mtfs.begin(0); l1mu != l1mtfs.end(0);  ++l1mu){ // considering BX = only
+
+    edm::Ref< RegionalMuonCandBxCollection > l1muRef( muonH, imu );
+    imu++;
+
+    float l1mu_eta = l1mu->hwEta()*0.010875;
+    // get the global phi
+    float l1mu_phi = MicroGMTConfiguration::calcGlobalPhi( l1mu->hwPhi(), l1mu->trackFinderType(), l1mu->processor() )*2*M_PI/576.;
+
+    float l1mu_feta = fabs( l1mu_eta );
+    if (l1mu_feta < ETAMIN_) continue;
+    if (l1mu_feta > ETAMAX_) continue;
+    
+    PropState matchProp;
+    int match_idx = -1;
+    int il1tk = -1;
+    
+    //added window determination function
+    float l1mu_pt = l1mu->hwPt()*0.5;
+    
+    int window[2]={-1,-1}; //contains the Dphi and Deta border coordinates for windowPhi and windowEta
+    for(unsigned i=0; i<5; ++i){
+      if(l1mu_pt<binsPt[i]) continue;
+      for(unsigned j=0; j<14; ++j){
+        if(l1mu_feta<binsAbsEta[j]) continue;
+	window[0]=i;
+	window[1]=j;
+      }
+    }
+    
+    if(window[0]<0 || window[1]<0){ //catch muons that are outside |eta|<2.5 or below 2 GeV pT
+      std::cout<<"Muon out of bounds with [pT,|eta|]=["<<l1mu_pt<<","<<l1mu_feta<<"]"<<std::endl;
+      continue;
+    }
+    
+    //windows configuration
+    float MaxDphi_mu_tk=windowPhi[window[0]][window[1]];
+    float MaxDeta_mu_tk=windowEta[window[0]][window[1]];
+    float bestDpt=999.;
+    int nInWindow=0;
+    
+    //taken as is from v1
+    for (const auto& l1tk : l1tks ){
+      il1tk++;
+
+      unsigned int nPars = 4;
+      if (use5ParameterFit_) nPars = 5;
+      float l1tk_pt = l1tk.getMomentum(nPars).perp();
+      if (l1tk_pt < PTMINTRA_) continue;
+
+      float l1tk_z  = l1tk.getPOCA(nPars).z();
+      if (fabs(l1tk_z) > ZMAX_) continue;
+
+      float l1tk_chi2 = l1tk.getChi2(nPars);
+      if (l1tk_chi2 > CHI2MAX_) continue;
+
+      int l1tk_nstubs = l1tk.getStubRefs().size();
+      if ( l1tk_nstubs < nStubsmin_) continue;
+
+      const PropState& pstate = propagateToGMT(l1tk);
+      if (!pstate.valid) continue;
+
+      //check if propagated track within window
+      if(fabs(l1mu_eta-pstate.eta) > MaxDeta_mu_tk) continue;
+      
+      float dphi=l1mu_phi-pstate.phi;
+      if (dphi >  M_PI) dphi -= 2.*M_PI;
+      if (dphi < -M_PI) dphi += 2.*M_PI;
+      if(fabs(dphi) > MaxDphi_mu_tk) continue;
+
+      //check if closest in pT
+      float Dpt=fabs(pstate.pt-l1mu_pt);
+      if(Dpt<bestDpt){
+        bestDpt   = Dpt;
+	match_idx = il1tk;
+	matchProp = pstate;
+	++nInWindow;
+      }
+    }// over l1tks
+    
+    //copied from v1
+    if(match_idx>=0){//match is in this case already the best match
+      const L1TTTrackType& matchTk = l1tks[match_idx];
+      edm::Ptr< L1TTTrackType > l1tkPtr(l1tksH, match_idx);
+
+      unsigned int nPars = 4;
+      if (use5ParameterFit_) nPars = 5;
+      const auto& p3 = matchTk.getMomentum(nPars);
+      float p4e = sqrt(0.105658369*0.105658369 + p3.mag2() );
+
+      math::XYZTLorentzVector l1tkp4(p3.x(), p3.y(), p3.z(), p4e);
+
+      const auto& tkv3=matchTk.getPOCA(nPars);
+      math::XYZPoint v3(tkv3.x(), tkv3.y(), tkv3.z());  // why is this defined?
+
+      float trkisol = -999;
+
+      L1TkMuonParticle l1tkmu(l1tkp4, l1muRef, l1tkPtr, trkisol);
+
+      l1tkmu.setTrackCurvature(matchTk.getRInv(nPars));
+      l1tkmu.setTrkzVtx( (float)tkv3.z() );
+      l1tkmu.setdR(0.); //this makes no sense in the case of this algorithm, dummy in case it hase to be specified...
+      l1tkmu.setNTracksMatched(nInWindow);
+      l1tkmu.setMuonDetector(detector);
+      tkMuons.push_back(l1tkmu);
+    }
+  }//end l1mu loop
+				     
 }
 
 

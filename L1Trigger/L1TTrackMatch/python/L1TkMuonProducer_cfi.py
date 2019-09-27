@@ -17,6 +17,7 @@ L1TkMuons = cms.EDProducer("L1TkMuonProducer",
     PTMINTRA = cms.double( 2. ),    # in GeV
     DRmax = cms.double( 0.5 ),
     nStubsmin = cms.int32( 4 ),        # minimum number of stubs
+    FullDetectorWindows = cms.bool(True), #use windows and algorithm for complete detector as of September 2019, overrides emtfMatchAlgoVersion if true
 #    closest = cms.bool( True ),
     correctGMTPropForTkZ = cms.bool(True),
     use5ParameterFit = cms.bool(False), #use 4-pars by defaults
