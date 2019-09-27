@@ -418,16 +418,16 @@ L1TkMuonProducer::PropState L1TkMuonProducer::propagateToGMT(const L1TkMuonProdu
     etaProp = 1.1;
     deta = tk_z/550./cosh(tk_aeta);
   } else {
-    float delta = tk_z/850.; //roughly scales as distance to 2nd station
+    /*float delta = tk_z/850.; //roughly scales as distance to 2nd station
     if (tk_eta > 0) delta *=-1;
-    dzCorrPhi = 1. + delta;
+    dzCorrPhi = 1. + delta;*/ //commented out, as it was found to have no relevant advantage
 
-    float zOzs = tk_z/850.;
+    /*float zOzs = tk_z/850.;
     if (tk_eta > 0) deta = zOzs/(1. - zOzs);
     else deta = zOzs/(1.+zOzs);
-    deta = deta*tanh(tk_eta);
+    deta = deta*tanh(tk_eta);*/ //commented out, as it was found to have a significant disadvantage
   }
-  float resPhi = tk_phi - 1.464*tk_q*cosh(1.7)/cosh(etaProp)/tk_pt*dzCorrPhi - M_PI/144.;
+  float resPhi = tk_phi - 1.464*tk_q*cosh(1.7)/cosh(etaProp)/tk_pt*dzCorrPhi;// - M_PI/144.; unmotivated term removed
   if (resPhi > M_PI) resPhi -= 2.*M_PI;
   if (resPhi < -M_PI) resPhi += 2.*M_PI;
 
