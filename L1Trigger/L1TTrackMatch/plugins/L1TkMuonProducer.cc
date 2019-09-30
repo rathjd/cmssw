@@ -397,6 +397,7 @@ void L1TkMuonProducer::runOnMTFCollection_v3(const edm::Handle<RegionalMuonCandB
                                      const edm::Handle<L1TTTrackCollectionType>& l1tksH,
                                      L1TkMuonParticleCollection& tkMuons,const int detector) const
 {
+  bool verbose=false; //switch for testing purposes
   //for now: collection of windows and borders as they are (consider putting these in a config file in the future)
   const float binsPt[6]={2.,5.,10.,15.,25.,100.};
   const float binsAbsEta[15]={0.0,0.2,0.4,0.6,0.7,0.9,1.0,1.1,1.2,1.3,1.5,1.7,1.9,2.2,2.5};
@@ -416,6 +417,8 @@ void L1TkMuonProducer::runOnMTFCollection_v3(const edm::Handle<RegionalMuonCandB
   const L1TTTrackCollectionType& l1tks = (*l1tksH.product());
   const RegionalMuonCandBxCollection& l1mtfs = (*muonH.product());
 
+  if(verbose) std::cout<<"-----enter collection "<<detector<<"-----"<<std::endl;
+
   int imu = 0;
   for (auto l1mu = l1mtfs.begin(0); l1mu != l1mtfs.end(0);  ++l1mu){ // considering BX = only
 
@@ -425,6 +428,8 @@ void L1TkMuonProducer::runOnMTFCollection_v3(const edm::Handle<RegionalMuonCandB
     float l1mu_eta = l1mu->hwEta()*0.010875;
     // get the global phi
     float l1mu_phi = MicroGMTConfiguration::calcGlobalPhi( l1mu->hwPhi(), l1mu->trackFinderType(), l1mu->processor() )*2*M_PI/576.;
+
+    if(verbose) std::cout<<"muon "<<imu-1<<": eta="<<l1mu_eta<<", phi="<<l1mu_phi<<std::endl;
 
     float l1mu_feta = fabs( l1mu_eta );
     if (l1mu_feta < ETAMIN_) continue;
@@ -457,10 +462,13 @@ void L1TkMuonProducer::runOnMTFCollection_v3(const edm::Handle<RegionalMuonCandB
     float MaxDeta_mu_tk=windowEta[window[0]][window[1]];
     float bestDpt=999.;
     int nInWindow=0;
+
+    if(verbose) std::cout<<"window selection ["<<window[0]<<","<<window[1]<<"]: maxDeta="<<MaxDeta_mu_tk<<", maxDphi="<<MaxDphi_mu_tk<<std::endl;
     
     //taken as is from v1
     for (const auto& l1tk : l1tks ){
       il1tk++;
+      if(verbose) std::cout<<"-_-_track "<<il1tk-1<<"_-_-"<<std::endl;
 
       unsigned int nPars = 4;
       if (use5ParameterFit_) nPars = 5;
@@ -479,6 +487,8 @@ void L1TkMuonProducer::runOnMTFCollection_v3(const edm::Handle<RegionalMuonCandB
       const PropState& pstate = propagateToGMT(l1tk);
       if (!pstate.valid) continue;
 
+      if(verbose) std::cout<<"passed quality cuts, pT="<<l1tk_pt<<", eta="<<pstate.eta<<", phi="<<pstate.phi<<std::endl;
+
       //check if propagated track within window
       if(fabs(l1mu_eta-pstate.eta) > MaxDeta_mu_tk) continue;
       
@@ -486,10 +496,12 @@ void L1TkMuonProducer::runOnMTFCollection_v3(const edm::Handle<RegionalMuonCandB
       if (dphi >  M_PI) dphi -= 2.*M_PI;
       if (dphi < -M_PI) dphi += 2.*M_PI;
       if(fabs(dphi) > MaxDphi_mu_tk) continue;
+      if(verbose) std::cout<<"passed window cuts"<<std::endl;
 
       //check if closest in pT
       float Dpt=fabs(pstate.pt-l1mu_pt);
       if(Dpt<bestDpt){
+	if(verbose) std::cout<<"selected with bestDpt="<<bestDpt<<">"<<Dpt<<std::endl;
         bestDpt   = Dpt;
 	match_idx = il1tk;
 	matchProp = pstate;
@@ -501,6 +513,7 @@ void L1TkMuonProducer::runOnMTFCollection_v3(const edm::Handle<RegionalMuonCandB
     if(match_idx>=0){//match is in this case already the best match
       const L1TTTrackType& matchTk = l1tks[match_idx];
       edm::Ptr< L1TTTrackType > l1tkPtr(l1tksH, match_idx);
+      if(verbose) std::cout<<"_____"<<match_idx<<" selected out of "<<nInWindow<<"_____"<<std::endl;
 
       unsigned int nPars = 4;
       if (use5ParameterFit_) nPars = 5;
@@ -523,6 +536,7 @@ void L1TkMuonProducer::runOnMTFCollection_v3(const edm::Handle<RegionalMuonCandB
       l1tkmu.setMuonDetector(detector);
       tkMuons.push_back(l1tkmu);
     }
+    else if(verbose) std::cout<<"_____no correlation_____"<<std::endl;
   }//end l1mu loop
 				     
 }

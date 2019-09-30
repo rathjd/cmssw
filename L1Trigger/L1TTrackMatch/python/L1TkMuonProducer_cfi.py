@@ -54,5 +54,10 @@ L1TkMuons = cms.EDProducer("L1TkMuonProducer",
 
 L1TkMuonsTP = L1TkMuons.clone(
     emtfMatchAlgoVersion='TP',
+    FullDetectorWindows = False,
     useTPMatchWindows = True
+)
+
+L1TkMuonsOld = L1TkMuons.clone(
+    FullDetectorWindows = False
 )
