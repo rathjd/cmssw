@@ -10,6 +10,7 @@ from L1Trigger.CSCTriggerPrimitives.params.clctParams import clctPSets
 from L1Trigger.CSCTriggerPrimitives.params.tmbParams import tmbPSets
 from L1Trigger.CSCTriggerPrimitives.params.auxiliaryParams import auxPSets
 from L1Trigger.CSCTriggerPrimitives.params.cclutParams import cclutParams
+from L1Trigger.CSCTriggerPrimitives.params.gemcscParams import gemcscPSets
 from L1Trigger.CSCTriggerPrimitives.params.showerParams import showerPSet
 
 cscTriggerPrimitiveDigis = cms.EDProducer(
@@ -20,6 +21,7 @@ cscTriggerPrimitiveDigis = cms.EDProducer(
     alctPSets,
     clctPSets,
     tmbPSets,
+    gemcscPSets,
 
     ## lookup tables for Run-3
     cclutParams.clone(),
@@ -62,25 +64,23 @@ run2_common.toModify( cscTriggerPrimitiveDigis,
 from Configuration.Eras.Modifier_run3_common_cff import run3_common
 run3_common.toModify( cscTriggerPrimitiveDigis,
                       commonParam = dict(runPhase2 = True,
-                                         runME11Up = True)
+                                         runME11Up = True,
+                                         runME21Up = True,
+                                         runME31Up = True,
+                                         runME41Up = True)
 )
 
 ## GEM-CSC ILT in ME1/1
 from Configuration.Eras.Modifier_run3_GEM_cff import run3_GEM
 run3_GEM.toModify( cscTriggerPrimitiveDigis,
                    GEMPadDigiClusterProducer = cms.InputTag("simMuonGEMPadDigiClusters"),
-                   commonParam = dict(runME11ILT = True),
-                   copadParamGE11 = auxPSets.copadParamGE11.clone()
+                   commonParam = dict(runME11ILT = True)
 )
 
 ## GEM-CSC ILT in ME2/1
 ## upgrade algorithms in ME3/1 and ME4/1
 from Configuration.Eras.Modifier_phase2_muon_cff import phase2_muon
 phase2_muon.toModify( cscTriggerPrimitiveDigis,
-                      commonParam = dict(runME21Up = True,
-                                         runME21ILT = True,
-                                         runME31Up = True,
-                                         runME41Up = True,
-                                         enableAlctPhase2 = True),
-                      copadParamGE21 = auxPSets.copadParamGE21.clone()
+                      commonParam = dict(runME21ILT = True,
+                                         enableAlctPhase2 = True)
 )

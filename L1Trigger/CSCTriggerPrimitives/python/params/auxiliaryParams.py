@@ -14,8 +14,13 @@ commonParam = cms.PSet(
     ## which increased the number of strips to 48
     gangedME1a = cms.bool(True),
 
-    # flags to optionally disable finding stubs in ME42 or ME1a
+    ## this option excludes comparators from ME1/a
+    ## in principle no LCTs can then be built in that region
+    ## however, there may be exceptionally rare cases where
+    ## ALCTs from ME1/a combine with GE1/1 coincidence pads
+    ## in the region 2.1 < |eta| < 2.2
     disableME1a = cms.bool(False),
+    ## this option excludes ME4/2 entirely
     disableME42 = cms.bool(False),
 
     # switch on HL-LHC algorithms
@@ -52,20 +57,8 @@ mpcParamRun2 = mpcParamRun1.clone(
     maxStubs = 18,
 )
 
-# GEM coincidence pad processors
-copadParamGE11 = cms.PSet(
-    verbosity = cms.uint32(0),
-    maxDeltaPad = cms.uint32(4),
-    maxDeltaRoll = cms.uint32(1),
-    maxDeltaBX = cms.uint32(0)
-)
-
-copadParamGE21 = copadParamGE11.clone()
-
 auxPSets = cms.PSet(
     commonParam = commonParam.clone(),
     mpcParamRun1 = mpcParamRun1.clone(),
     mpcParamRun2 = mpcParamRun2.clone(),
-    copadParamGE11 = copadParamGE11.clone(),
-    copadParamGE21 = copadParamGE21.clone()
 )

@@ -14,23 +14,7 @@
 #include "L1Trigger/CSCTriggerPrimitives/interface/CSCUpgradeAnodeLCTProcessor.h"
 #include "L1Trigger/CSCTriggerPrimitives/interface/CSCUpgradeCathodeLCTProcessor.h"
 #include "L1Trigger/CSCTriggerPrimitives/interface/LCTContainer.h"
-
-// generic container type
-namespace {
-
-  // first: raw detid, second: digi
-  template <class T>
-  using match = std::pair<unsigned int, T>;
-
-  // vector of template above
-  template <class T>
-  using matches = std::vector<std::pair<unsigned int, T> >;
-
-  // first: BX number, second: vector of template above
-  template <class T>
-  using matchesBX = std::map<int, std::vector<std::pair<unsigned int, T> > >;
-
-}  // namespace
+#include "L1Trigger/CSCTriggerPrimitives/interface/CSCOverlap.h"
 
 class CSCUpgradeMotherboard : public CSCMotherboard {
 public:
@@ -42,36 +26,19 @@ public:
                         unsigned chamber,
                         const edm::ParameterSet& conf);
 
-  ~CSCUpgradeMotherboard() override;
+  ~CSCUpgradeMotherboard() override {}
 
   // Empty the LCT container
   void clear();
 
-  // Compare two matches of type <ID,DIGI>
-  // The template is match<GEMPadDigi> or match<GEMCoPadDigi>
-  template <class S>
-  bool compare(const S& p, const S& q) const;
-
-  // Get the common matches of type <ID,DIGI>. Could be more than 1
-  // The template is matches<GEMPadDigi> or matches<GEMCoPadDigi>
-  template <class S>
-  void intersection(const S& d1, const S& d2, S& result) const;
-
-  /** Methods to sort the LCTs */
-  static bool sortLCTsByQuality(const CSCCorrelatedLCTDigi&, const CSCCorrelatedLCTDigi&);
-  static bool sortLCTsByGEMDphi(const CSCCorrelatedLCTDigi&, const CSCCorrelatedLCTDigi&);
-  // generic sorting function
-  // provide an LCT collection and a sorting function
-  void sortLCTs(std::vector<CSCCorrelatedLCTDigi>& lcts,
-                bool (*sorter)(const CSCCorrelatedLCTDigi&, const CSCCorrelatedLCTDigi&)) const;
-
-  /** get CSCPart from HS, station, ring number **/
-  enum CSCPart getCSCPart(int keystrip) const;
-
   // run TMB with GEM pad clusters as input
   void run(const CSCWireDigiCollection* wiredc, const CSCComparatorDigiCollection* compdc) override;
 
-  /* readout the two best LCTs in this CSC */
+  /* Returns vector of read-out correlated LCTs, if any.  Starts with
+     the vector of all found LCTs and selects the ones in the read-out
+     time window.
+     When ME1/a is disabled, LCTs from ME1/a are rejected
+  */
   std::vector<CSCCorrelatedLCTDigi> readoutLCTs() const override;
 
 protected:
@@ -82,9 +49,31 @@ protected:
                      CSCCorrelatedLCTDigi& lct1,
                      CSCCorrelatedLCTDigi& lct2) const;
 
-  Parity theParity;
+  // special cases for ME1/1 (when GEMs are not used)
+  bool doesALCTCrossCLCT(const CSCALCTDigi& a, const CSCCLCTDigi& c) const;
 
-  void setPrefIndex();
+  // special correlation function for ME1/1
+  void correlateLCTsME11(const CSCALCTDigi& bALCT,
+                         const CSCALCTDigi& sALCT,
+                         const CSCCLCTDigi& bCLCT,
+                         const CSCCLCTDigi& sCLCT,
+                         CSCCorrelatedLCTDigi& lct1,
+                         CSCCorrelatedLCTDigi& lct2) const;
+
+  // Cross-BX sorting algorithm
+  // where the central match BX goes first,
+  // then the closest early, the closest late, etc.
+  void crossBxSorting();
+
+  // Compare two matches of type <ID,DIGI>
+  // The template is match<GEMPadDigi> or match<GEMCoPadDigi>
+  template <class S>
+  bool compare(const S& p, const S& q) const;
+
+  // Get the common matches of type <ID,DIGI>. Could be more than 1
+  // The template is matches<GEMPadDigi> or matches<GEMCoPadDigi>
+  template <class S>
+  void intersection(const S& d1, const S& d2, S& result) const;
 
   /** for the case when more than 2 LCTs/BX are allowed;
       maximum match window = 15 */
@@ -97,16 +86,15 @@ protected:
   bool match_earliest_clct_only;
 
   /* type of algorithm to sort the stubs */
-  unsigned int tmb_cross_bx_algo;
-
-  /** maximum lcts per BX in MEX1: 2, 3, 4 or 999 */
-  unsigned int max_lcts;
+  bool tmb_cross_bx_sorting_;
 
   // debug gem matching
   bool debug_matching;
 
-  // check look-up-tables
-  bool debug_luts;
+  // ignore unphysical ALCT-CLCT matches
+  bool ignoreAlctCrossClct;
+
+  std::unique_ptr<CSCOverlap> cscOverlap_;
 };
 
 template <class S>

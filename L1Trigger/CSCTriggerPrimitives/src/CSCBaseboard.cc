@@ -12,6 +12,7 @@ CSCBaseboard::CSCBaseboard(unsigned endcap,
   theRing = CSCTriggerNumbering::ringFromTriggerLabels(theStation, theTrigChamber);
 
   theChamber = CSCTriggerNumbering::chamberFromTriggerLabels(theSector, theSubsector, theStation, theTrigChamber);
+
   isME11_ = (theStation == 1 && theRing == 1);
   isME21_ = (theStation == 2 && theRing == 1);
   isME31_ = (theStation == 3 && theRing == 1);

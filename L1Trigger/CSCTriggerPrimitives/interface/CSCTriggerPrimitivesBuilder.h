@@ -114,9 +114,6 @@ private:
   bool runPhase2_;
 
   /** Phase2: special switch for disabling ME42 */
-  bool disableME1a_;
-
-  /** Phase2: special switch for disabling ME42 */
   bool disableME42_;
 
   /** Phase2: individual switches */

@@ -25,19 +25,17 @@ The C++ code is located in `L1Trigger/CSCTriggerPrimitives/src/` and `L1Trigger/
 
 The `plugins/` directory contains the producer module `CSCTriggerPrimitivesProducer`. The `CSCTriggerPrimitivesReader` should be used for firmware vs emulator comparisons.
 
-The `src/` directory contains the builder `CSCTriggerPrimitivesBuilder`, processors (`CSCAnodeLCTProcessor`,  `CSCCathodeLCTProcessor`, `GEMCoPadProcessor`), motherboards (`CSCMotherboard` and similar names), a muon port card (`CSCMuonPortCard`), auxiliary classes to produce and access look-up-tables (`CSCUpgradeMotherboardLUT` and `CSCUpgradeMotherboardLUTGenerator`). Trigger patterns are stored in `CSCPatternBank`.
+The `src/` directory contains the builder `CSCTriggerPrimitivesBuilder`, processors (`CSCAnodeLCTProcessor`,  `CSCCathodeLCTProcessor`, `GEMCoPadProcessor`), motherboards (`CSCMotherboard` and similar names), a muon port card (`CSCMuonPortCard`), and classes to access look-up-tables. Trigger patterns are stored in `CSCPatternBank`.
 
 The `CSCTriggerPrimitivesBuilder` instantiates the TMBs for each chamber and the MPCs for each trigger sector. TMBs and MPC are organized in trigger sectors. A trigger sector has 9 associated TMBs and a single MPC. Once instantiated, the TMBs are configured and run according to settings defined `cscTriggerPrimitiveDigis_cfi` (see Configuration). After running the TMB the ALCT/CLCT/LCT collections are read out and put into the event. After all TMBs are run, the MPCs produce LCTs to be sent to the OMTF and EMTF.
 
 The processors `CSCAnodeLCTProcessor` and `CSCCathodeLCTProcessor` produce ALCTs and CLCTs from anode wire-group digis and comparator digis respectively. Typically at least 4 out of 6 layers must have coincident anode/cathode hits to produce an ALCT/CLCT. However, the minimum number of layers is configurable.
 
-The motherboards `CSCMotherboard` ( and similar names) produce LCTs from temporally matched ALCTs and CLCTs. While a TMB can produce several matches (LCT1, LCT2, LCT3,...), only the two highest ranking are sent to the MPC downstream. `CSCUpgradeMotherboard` is the base class for any motherboard commissioned during Run-2 (end of 2018) and beyond. `CSCMotherboardME11` is a derived class for ME1/1 TMBs that run an upgraded algorithm optimized for high-pileup. `CSCGEMMotherboard` is a derived class for TMBs running a GEM-CSC integrated trigger. There are two implementations `CSCGEMMotherboardME11` and `CSCGEMMotherboardME21` for GE1/1-ME1/1 and GE2/1-ME2/1 respectively. The algorithms are based on `CSCMotherboardME11`, but also use GEM information.
+The motherboards `CSCMotherboard` ( and similar names) produce LCTs from temporally matched ALCTs and CLCTs. While a TMB can produce several matches (LCT1, LCT2, LCT3,...), only the two highest ranking are sent to the MPC downstream. `CSCUpgradeMotherboard` is the base class for any motherboard commissioned during Run-2 (end of 2018) and beyond. `CSCGEMMotherboard` is a derived class for TMBs running a GEM-CSC integrated trigger.
 
 The `CSCMuonPortCard` class collects LCTs from a trigger sector and relays them to the OMTF and EMTF. In the past, it would also sort and select the best 3 (out of 18), but that is no longer done. All LCTs are sent to the OMTF and EMTF.
 
-The `CSCUpgradeMotherboardLUTGenerator` and `CSCUpgradeMotherboardLUT` produce and contain look-up-tables that are used in the CSC upgrade algorithm and/or the GEM-CSC algorithm.
-
-A new class is `CSCComparatorCodeLUT` which provides access to look-up-tables for improved local bending and position in Run-3 (CCLUT). Better LCT position and bending is critical to reconstruct L1 muons for displaced signatures, one of the cornerstones of the Phase-2 muon upgrade.
+A new class is `CSCLUTReader` which provides access to look-up-tables for improved local bending and position in Run-3 (CCLUT, GEM-CSC). Better LCT position and bending is critical to reconstruct L1 muons for displaced signatures, one of the cornerstones of the Phase-2 muon upgrade.
 
 The `test/` directory contains python configuration to test the CSC local trigger and analyzer the data.
 

@@ -46,15 +46,12 @@ tmbPhase2 = tmbPhase1.clone(
     # the first BX with matching CLCT
     matchEarliestClctOnly = cms.bool(False),
 
-    # 0 = default "non-X-BX" sorting algorithm,
+    # False = default "non-X-BX" sorting algorithm,
     #     where the first BX with match goes first
-    # 1 = simple X-BX sorting algorithm,
+    # True = simple X-BX sorting algorithm,
     #     where the central match BX goes first,
     #     then the closest early, the closest late, etc.
-    tmbCrossBxAlgorithm = cms.uint32(1),
-
-    # How many maximum LCTs per whole chamber per BX to keep
-    maxLCTs = cms.uint32(2),
+    tmbCrossBxSorting = cms.bool(True),
 
     # True: allow construction of unphysical LCTs
     # in ME11 for which WG and HS do not intersect
@@ -68,8 +65,6 @@ tmbPhase2 = tmbPhase1.clone(
 
 # to be used by ME11 chambers with GEM-CSC ILT
 tmbPhase2GE11 = tmbPhase2.clone(
-    tmbCrossBxAlgorithm = 2,
-
     ## matching to pads
     maxDeltaBXPad = cms.int32(1),
     maxDeltaBXCoPad = cms.int32(1),
@@ -95,8 +90,6 @@ tmbPhase2GE11 = tmbPhase2.clone(
 
 # to be used by ME21 chambers with GEM-CSC ILT
 tmbPhase2GE21 = tmbPhase2.clone(
-    tmbCrossBxAlgorithm = 2,
-
     ## matching to pads
     maxDeltaBXPad = cms.int32(1),
     maxDeltaBXCoPad = cms.int32(1),
@@ -115,9 +108,26 @@ tmbPhase2GE21 = tmbPhase2.clone(
     promoteCLCTGEMquality = cms.bool(True),
 )
 
+## LUTs to map wiregroup onto min and max half-strip number that it crosses in ME1/1
+wgCrossHsME11Params = cms.PSet(
+    wgCrossHsME1aFiles = cms.vstring(
+        "L1Trigger/CSCTriggerPrimitives/data/CSCLUT_wg_min_hs_ME1a.txt",
+        "L1Trigger/CSCTriggerPrimitives/data/CSCLUT_wg_max_hs_ME1a.txt",
+    ),
+    wgCrossHsME1aGangedFiles = cms.vstring(
+        "L1Trigger/CSCTriggerPrimitives/data/CSCLUT_wg_min_hs_ME1a_ganged.txt",
+        "L1Trigger/CSCTriggerPrimitives/data/CSCLUT_wg_max_hs_ME1a_ganged.txt",
+    ),
+    wgCrossHsME1bFiles = cms.vstring(
+        "L1Trigger/CSCTriggerPrimitives/data/CSCLUT_wg_min_hs_ME1b.txt",
+        "L1Trigger/CSCTriggerPrimitives/data/CSCLUT_wg_max_hs_ME1b.txt",
+    )
+)
+
 tmbPSets = cms.PSet(
     tmbPhase1 = tmbPhase1.clone(),
     tmbPhase2 = tmbPhase2.clone(),
+    wgCrossHsME11Params = wgCrossHsME11Params.clone(),
     tmbPhase2GE11 = tmbPhase2GE11.clone(),
     tmbPhase2GE21 = tmbPhase2GE21.clone(),
 )
