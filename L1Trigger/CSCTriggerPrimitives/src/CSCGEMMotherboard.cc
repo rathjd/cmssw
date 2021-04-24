@@ -70,7 +70,7 @@ void CSCGEMMotherboard::run(const CSCWireDigiCollection* wiredc,
                                 const CSCComparatorDigiCollection* compdc,
                                 const GEMPadDigiClusterCollection* gemClusters) {
   // Step 1: Setup
-  CSCGEMMotherboard::clear();
+  clear();
 
   // encode high multiplicity bits
   encodeHighMultiplicityBits();
@@ -159,19 +159,16 @@ void CSCGEMMotherboard::run(const CSCWireDigiCollection* wiredc,
 
       // ALCT-to-GEM matching in ME1b
       int nSuccesFulGEMMatches = 0;
-      if (nSuccesFulMatches == 0 and buildLCTfromALCTandGEM_ME1b_) {
+      if (nSuccesFulMatches == 0) {
         if (debug_matching)
           LogTrace("CSCGEMMotherboard") << "++No valid ALCT-CLCT matches in ME1b" << std::endl;
         for (int bx_gem = bx_copad_start; bx_gem <= bx_copad_stop; bx_gem++) {
-          if (false) {
-            continue;
-          }
 
-          // CSCGEMMotherboard::correlateLCTsGEM(alctProc->getBestALCT(bx_alct),
-          //                                     alctProc->getSecondALCT(bx_alct),
-          //                                     copads,
-          //                                     allLCTs(bx_alct, 0, 0),
-          //                                     allLCTs(bx_alct, 0, 1));
+          correlateLCTsGEM(alctProc->getBestALCT(bx_alct),
+                           alctProc->getSecondALCT(bx_alct),
+                           clusters_[bx_alct],
+                           allLCTs(bx_alct, 0, 0),
+                           allLCTs(bx_alct, 0, 1));
 
           if (allLCTs(bx_alct, 0, 0).isValid()) {
             ++nSuccesFulGEMMatches;
@@ -181,7 +178,6 @@ void CSCGEMMotherboard::run(const CSCWireDigiCollection* wiredc,
           }
         }
       }
-
     }  // end of ALCT valid block
     else {
       if (true) {
@@ -189,32 +185,31 @@ void CSCGEMMotherboard::run(const CSCWireDigiCollection* wiredc,
         const int bx_clct_start(bx_alct - match_trig_window_size / 2 - CSCConstants::ALCT_CLCT_OFFSET);
         const int bx_clct_stop(bx_alct + match_trig_window_size / 2 - CSCConstants::ALCT_CLCT_OFFSET);
 
-        // matching in ME1b
-        if (buildLCTfromCLCTandGEM_ME1b_) {
-          for (int bx_clct = bx_clct_start; bx_clct <= bx_clct_stop; bx_clct++) {
-            if (bx_clct < 0 or bx_clct >= CSCConstants::MAX_CLCT_TBINS)
-              continue;
-            if (drop_used_clcts and used_clct_mask[bx_clct])
-              continue;
-            if (clctProc->getBestCLCT(bx_clct).isValid()) {
-              const int quality(clctProc->getBestCLCT(bx_clct).getQuality());
+        for (int bx_clct = bx_clct_start; bx_clct <= bx_clct_stop; bx_clct++) {
+          if (bx_clct < 0 or bx_clct >= CSCConstants::MAX_CLCT_TBINS)
+            continue;
+          if (drop_used_clcts and used_clct_mask[bx_clct])
+            continue;
+          if (clctProc->getBestCLCT(bx_clct).isValid()) {
+            const int quality(clctProc->getBestCLCT(bx_clct).getQuality());
 
-              int mbx = bx_clct - bx_clct_start;
-              // CSCGEMMotherboard::correlateLCTsGEM(clctProc->getBestCLCT(bx_clct),
-              //                                     clctProc->getSecondCLCT(bx_clct),
-              //                                     coPads,
-              //                                     allLCTs(bx_alct, mbx, 0),
-              //                                     allLCTs(bx_alct, mbx, 1));
-              if (allLCTs(bx_alct, mbx, 0).isValid()) {
-                used_clct_mask[bx_clct] += 1;
+            int mbx = bx_clct - bx_clct_start;
 
-                if (match_earliest_clct_only)
-                  break;
-              }
+            correlateLCTsGEM(clctProc->getBestCLCT(bx_clct),
+                             clctProc->getSecondCLCT(bx_clct),
+                             clusters_[bx_clct],
+                             allLCTs(bx_alct, mbx, 0),
+                             allLCTs(bx_alct, mbx, 1));
+
+            if (allLCTs(bx_alct, mbx, 0).isValid()) {
+              used_clct_mask[bx_clct] += 1;
+
+              if (match_earliest_clct_only)
+                break;
             }
-          }  //end of clct loop
-        }
-      }  // if (!coPads.empty())
+          }
+        }  //end of clct loop
+      }
     }
   }  // end of ALCT-centric matching
 
@@ -238,6 +233,25 @@ void CSCGEMMotherboard::correlateLCTsGEM(const CSCALCTDigi& bestALCT,
                                          CSCCorrelatedLCTDigi& lct1,
                                          CSCCorrelatedLCTDigi& lct2) const
 {
+  // output candidates
+  std::vector<CSCCorrelatedLCTDigi> lcts;
+
+  const auto& bestClusters = cscGEMMatcher_->matchingClustersBXLoc(bestALCT, clusters);
+  const auto& secondClusters = cscGEMMatcher_->matchingClustersBXLoc(secondALCT, clusters);
+
+  // check all possibilities
+  // push all to the output
+  for (const auto& cl : bestClusters) {
+    lcts.push_back(constructLCTsGEM(bestALCT, CSCCLCTDigi(), cl, 0));
+  }
+
+  for (const auto& cl : secondClusters) {
+    lcts.push_back(constructLCTsGEM(secondALCT, CSCCLCTDigi(), cl, 0));
+  }
+
+  // retain first 2
+
+  // assign track number
 }
 
 void CSCGEMMotherboard::correlateLCTsGEM(const CSCCLCTDigi& bestCLCT,
@@ -246,6 +260,27 @@ void CSCGEMMotherboard::correlateLCTsGEM(const CSCCLCTDigi& bestCLCT,
                                          CSCCorrelatedLCTDigi& lct1,
                                          CSCCorrelatedLCTDigi& lct2) const
 {
+  // output candidates
+  std::vector<CSCCorrelatedLCTDigi> lcts;
+
+  const auto& bestClusters = cscGEMMatcher_->matchingClustersBXLoc(bestCLCT, clusters);
+  const auto& secondClusters = cscGEMMatcher_->matchingClustersBXLoc(secondCLCT, clusters);
+
+  // check all possibilities
+  // push all to the output
+  for (const auto& cl : bestClusters) {
+    lcts.push_back(constructLCTsGEM(CSCALCTDigi(), bestCLCT, cl, 0));
+  }
+
+  for (const auto& cl : secondClusters) {
+    lcts.push_back(constructLCTsGEM(CSCALCTDigi(), secondCLCT, cl, 0));
+  }
+
+  // sort by bending angle
+
+  // retain 2 with smallest bending angle
+
+  // assign track number
 }
 
 void CSCGEMMotherboard::correlateLCTsGEM(const CSCALCTDigi& bestALCT,
@@ -256,7 +291,37 @@ void CSCGEMMotherboard::correlateLCTsGEM(const CSCALCTDigi& bestALCT,
                                          CSCCorrelatedLCTDigi& lct1,
                                          CSCCorrelatedLCTDigi& lct2) const
 {
+  // output candidates
+  std::vector<CSCCorrelatedLCTDigi> lcts;
 
+  const auto& bbClusters = cscGEMMatcher_->matchingClustersBXLoc(bestALCT, bestCLCT, clusters);
+  const auto& bsClusters = cscGEMMatcher_->matchingClustersBXLoc(bestALCT, secondCLCT, clusters);
+  const auto& sbClusters = cscGEMMatcher_->matchingClustersBXLoc(secondALCT, bestCLCT, clusters);
+  const auto& ssClusters = cscGEMMatcher_->matchingClustersBXLoc(secondALCT, secondCLCT, clusters);
+
+  // check all possibilities
+  // push all to the output
+  for (const auto& cl : bbClusters) {
+    lcts.push_back(constructLCTsGEM(bestALCT, bestCLCT, cl, 0));
+  }
+
+  for (const auto& cl : bsClusters) {
+    lcts.push_back(constructLCTsGEM(bestALCT, secondCLCT, cl, 0));
+  }
+
+  for (const auto& cl : sbClusters) {
+    lcts.push_back(constructLCTsGEM(secondALCT, bestCLCT, cl, 0));
+  }
+
+  for (const auto& cl : ssClusters) {
+    lcts.push_back(constructLCTsGEM(secondALCT, secondCLCT, cl, 0));
+  }
+
+  // sort by bending angle
+
+  // retain 2 with smallest bending angle
+
+  // assign track number
 }
 
 CSCCorrelatedLCTDigi CSCGEMMotherboard::constructLCTsGEM(const CSCALCTDigi& alct,
@@ -268,11 +333,13 @@ CSCCorrelatedLCTDigi CSCGEMMotherboard::constructLCTsGEM(const CSCALCTDigi& alct
   // make a new LCT
   CSCCorrelatedLCTDigi thisLCT;
 
-  /*
-    if (!alct.isValid() and !clct.isValid()) {
+  if (!alct.isValid() and !clct.isValid()) {
     edm::LogError("CSCGEMCMotherboard") << "Warning!!! neither ALCT nor CLCT valid, return invalid LCT";
     return thisLCT;
-    }
+  }
+
+
+  /*
 
     // Determine the case and assign properties depending on the LCT dataformat (old/new)
     if (alct.isValid() and clct.isValid() and gem1.isValid() and not gem2.isValid()) {

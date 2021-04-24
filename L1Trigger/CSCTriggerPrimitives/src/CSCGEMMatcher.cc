@@ -18,6 +18,8 @@ CSCGEMMatcher::GEMInternalClusters CSCGEMMatcher::matchingClustersBX(const CSCAL
                                                                      const GEMInternalClusters& clusters) const {
   GEMInternalClusters output;
 
+  if (!alct.isValid()) return output;
+
   // select clusters matched in time
   for (const auto& cl : clusters) {
     if (std::abs(alct.getBX() - cl.bx()) <= 1)
@@ -31,6 +33,8 @@ CSCGEMMatcher::GEMInternalClusters CSCGEMMatcher::matchingClustersBX(const CSCAL
 CSCGEMMatcher::GEMInternalClusters CSCGEMMatcher::matchingClustersBX(const CSCCLCTDigi& clct,
                                                                      const GEMInternalClusters& clusters) const {
   GEMInternalClusters output;
+
+  if (!clct.isValid()) return output;
 
   // select clusters matched in time
   for (const auto& cl : clusters) {
@@ -46,6 +50,9 @@ CSCGEMMatcher::GEMInternalClusters CSCGEMMatcher::matchingClustersBX(const CSCAL
                                                                      const CSCCLCTDigi& clct,
                                                                      const GEMInternalClusters& clusters) const {
   GEMInternalClusters output;
+
+  // both need to be valid
+  if (!alct.isValid() or !clct.isValid()) return output;
 
   // get the single matches
   const auto& alctClusters = matchingClustersBX(alct, clusters);
@@ -67,6 +74,8 @@ CSCGEMMatcher::GEMInternalClusters CSCGEMMatcher::matchingClustersLoc(const CSCA
 
   GEMInternalClusters output;
 
+  if (!alct.isValid()) return output;
+
   // select clusters matched in wiregroup
   for (const auto& cl : clusters) {
     if (cl.min_wg() <= alct.getKeyWG() and alct.getKeyWG() <= cl.max_wg())
@@ -79,6 +88,8 @@ CSCGEMMatcher::GEMInternalClusters CSCGEMMatcher::matchingClustersLoc(const CSCA
 CSCGEMMatcher::GEMInternalClusters CSCGEMMatcher::matchingClustersLoc(const CSCCLCTDigi& clct, const GEMInternalClusters& clusters) const{
 
   GEMInternalClusters output;
+
+  if (!clct.isValid()) return output;
 
   // select clusters matched in wiregroup
   for (const auto& cl : clusters) {
@@ -114,6 +125,9 @@ CSCGEMMatcher::GEMInternalClusters CSCGEMMatcher::matchingClustersLoc(const CSCA
                                                                       const GEMInternalClusters& clusters) const
 {
   GEMInternalClusters output;
+
+  // both need to be valid
+  if (!alct.isValid() or !clct.isValid()) return output;
 
   // get the single matches
   const auto& alctClusters = matchingClustersLoc(alct, clusters);
