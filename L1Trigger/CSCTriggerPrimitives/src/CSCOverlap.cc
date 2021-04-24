@@ -18,11 +18,15 @@ CSCOverlap::CSCOverlap(unsigned endcap, unsigned station, unsigned ring, bool is
   wg_cross_max_hs_ME1b_ = std::make_unique<CSCLUTReader>(wgCrossHsME1bFiles_[1]);
 }
 
-bool CSCOverlap::doesALCTCrossCLCT(const CSCALCTDigi& a, const CSCCLCTDigi& c) const {
+bool CSCOverlap::doesALCTCrossCLCT(const CSCALCTDigi& a, const CSCCLCTDigi& c, bool ignoreAlctCrossClct) const {
   // both need to valid
   if (!c.isValid() || !a.isValid()) {
     return false;
   }
+
+  // when non-overlapping half-strips and wiregroups don't matter
+  if (ignoreAlctCrossClct)
+    return true;
 
   // overlap only needs to be considered for ME1/1
   if (station_ == 1 and ring_ == 1) {

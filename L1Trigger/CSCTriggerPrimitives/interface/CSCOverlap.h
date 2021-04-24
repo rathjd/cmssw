@@ -24,7 +24,7 @@ public:
   CSCOverlap(unsigned endcap, unsigned station, unsigned ring, bool isganged, const edm::ParameterSet& luts);
 
   // check if an ALCT can cross a CLCT. Not always the case for ME1/1
-  bool doesALCTCrossCLCT(const CSCALCTDigi& a, const CSCCLCTDigi& c) const;
+  bool doesALCTCrossCLCT(const CSCALCTDigi& a, const CSCCLCTDigi& c, bool ignoreAlctCrossClct) const;
 
 private:
   bool doesWiregroupCrossHalfStrip(int wg, int keystrip) const;

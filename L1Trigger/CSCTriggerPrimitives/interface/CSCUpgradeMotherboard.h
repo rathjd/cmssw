@@ -52,28 +52,10 @@ protected:
   // special cases for ME1/1 (when GEMs are not used)
   bool doesALCTCrossCLCT(const CSCALCTDigi& a, const CSCCLCTDigi& c) const;
 
-  // special correlation function for ME1/1
-  void correlateLCTsME11(const CSCALCTDigi& bALCT,
-                         const CSCALCTDigi& sALCT,
-                         const CSCCLCTDigi& bCLCT,
-                         const CSCCLCTDigi& sCLCT,
-                         CSCCorrelatedLCTDigi& lct1,
-                         CSCCorrelatedLCTDigi& lct2) const;
-
   // Cross-BX sorting algorithm
   // where the central match BX goes first,
   // then the closest early, the closest late, etc.
   void crossBxSorting();
-
-  // Compare two matches of type <ID,DIGI>
-  // The template is match<GEMPadDigi> or match<GEMCoPadDigi>
-  template <class S>
-  bool compare(const S& p, const S& q) const;
-
-  // Get the common matches of type <ID,DIGI>. Could be more than 1
-  // The template is matches<GEMPadDigi> or matches<GEMCoPadDigi>
-  template <class S>
-  void intersection(const S& d1, const S& d2, S& result) const;
 
   /** for the case when more than 2 LCTs/BX are allowed;
       maximum match window = 15 */
@@ -96,21 +78,5 @@ protected:
 
   std::unique_ptr<CSCOverlap> cscOverlap_;
 };
-
-template <class S>
-bool CSCUpgradeMotherboard::compare(const S& p, const S& q) const {
-  return (p.first == q.first) and (p.second == q.second);
-}
-
-template <class S>
-void CSCUpgradeMotherboard::intersection(const S& d1, const S& d2, S& result) const {
-  for (const auto& p : d1) {
-    for (const auto& q : d2) {
-      if (compare(p, q)) {
-        result.push_back(p);
-      }
-    }
-  }
-}
 
 #endif

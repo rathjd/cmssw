@@ -135,174 +135,107 @@ void CSCUpgradeMotherboard::correlateLCTs(const CSCALCTDigi& bALCT,
                                           const CSCCLCTDigi& sCLCT,
                                           CSCCorrelatedLCTDigi& lct1,
                                           CSCCorrelatedLCTDigi& lct2) const {
-  CSCALCTDigi bestALCT = bALCT;
-  CSCALCTDigi secondALCT = sALCT;
-  CSCCLCTDigi bestCLCT = bCLCT;
-  CSCCLCTDigi secondCLCT = sCLCT;
-
-  const bool anodeBestValid = bestALCT.isValid();
-  const bool anodeSecondValid = secondALCT.isValid();
-  const bool cathodeBestValid = bestCLCT.isValid();
-  const bool cathodeSecondValid = secondCLCT.isValid();
-
-  if (anodeBestValid and !anodeSecondValid)
-    secondALCT = bestALCT;
-  if (!anodeBestValid and anodeSecondValid)
-    bestALCT = secondALCT;
-  if (cathodeBestValid and !cathodeSecondValid)
-    secondCLCT = bestCLCT;
-  if (!cathodeBestValid and cathodeSecondValid)
-    bestCLCT = secondCLCT;
-
-  // ALCT-CLCT matching conditions are defined by "trig_enable" configuration
-  // parameters.
-  if ((alct_trig_enable and bestALCT.isValid()) or (clct_trig_enable and bestCLCT.isValid()) or
-      (match_trig_enable and bestALCT.isValid() and bestCLCT.isValid())) {
-    lct1 = constructLCTs(bestALCT, bestCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 1);
-  }
-
-  if (((secondALCT != bestALCT) or (secondCLCT != bestCLCT)) and
-      ((alct_trig_enable and secondALCT.isValid()) or (clct_trig_enable and secondCLCT.isValid()) or
-       (match_trig_enable and secondALCT.isValid() and secondCLCT.isValid()))) {
-    lct2 = constructLCTs(secondALCT, secondCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 2);
-  }
-}
-
-bool CSCUpgradeMotherboard::doesALCTCrossCLCT(const CSCALCTDigi& a, const CSCCLCTDigi& c) const {
-  return cscOverlap_->doesALCTCrossCLCT(a, c);
-}
-
-void CSCUpgradeMotherboard::correlateLCTsME11(const CSCALCTDigi& bALCT,
-                                              const CSCALCTDigi& sALCT,
-                                              const CSCCLCTDigi& bCLCT,
-                                              const CSCCLCTDigi& sCLCT,
-                                              CSCCorrelatedLCTDigi& lct1,
-                                              CSCCorrelatedLCTDigi& lct2) const {
   // assume that always anodeBestValid && cathodeBestValid
   CSCALCTDigi bestALCT = bALCT;
   CSCALCTDigi secondALCT = sALCT;
   CSCCLCTDigi bestCLCT = bCLCT;
   CSCCLCTDigi secondCLCT = sCLCT;
 
-  if (ignoreAlctCrossClct) {
-    const bool anodeBestValid = bestALCT.isValid();
-    const bool anodeSecondValid = secondALCT.isValid();
-    const bool cathodeBestValid = bestCLCT.isValid();
-    const bool cathodeSecondValid = secondCLCT.isValid();
-    if (anodeBestValid and !anodeSecondValid)
-      secondALCT = bestALCT;
-    if (!anodeBestValid and anodeSecondValid)
-      bestALCT = secondALCT;
-    if (cathodeBestValid and !cathodeSecondValid)
-      secondCLCT = bestCLCT;
-    if (!cathodeBestValid and cathodeSecondValid)
-      bestCLCT = secondCLCT;
-    // ALCT-CLCT matching conditions are defined by "trig_enable" configuration
-    // parameters.
-    if ((alct_trig_enable and bestALCT.isValid()) or (clct_trig_enable and bestCLCT.isValid()) or
-        (match_trig_enable and bestALCT.isValid() and bestCLCT.isValid())) {
-      lct1 = constructLCTs(bestALCT, bestCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 1);
-    }
-    if (((secondALCT != bestALCT) or (secondCLCT != bestCLCT)) and
-        ((alct_trig_enable and secondALCT.isValid()) or (clct_trig_enable and secondCLCT.isValid()) or
-         (match_trig_enable and secondALCT.isValid() and secondCLCT.isValid()))) {
-      lct2 = constructLCTs(secondALCT, secondCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 2);
-    }
+  if (secondALCT == bestALCT)
+    secondALCT.clear();
+  if (secondCLCT == bestCLCT)
+    secondCLCT.clear();
+
+  const int ok11 = doesALCTCrossCLCT(bestALCT, bestCLCT);
+  const int ok12 = doesALCTCrossCLCT(bestALCT, secondCLCT);
+  const int ok21 = doesALCTCrossCLCT(secondALCT, bestCLCT);
+  const int ok22 = doesALCTCrossCLCT(secondALCT, secondCLCT);
+  const int code = (ok11 << 3) | (ok12 << 2) | (ok21 << 1) | (ok22);
+
+  int dbg = 0;
+  if (dbg)
+    LogTrace("CSCUpgradeMotherboard") << "debug correlateLCTs in ME11 " << cscId_ << std::endl
+                                   << "ALCT1: " << bestALCT << std::endl
+                                   << "ALCT2: " << secondALCT << std::endl
+                                   << "CLCT1: " << bestCLCT << std::endl
+                                   << "CLCT2: " << secondCLCT << std::endl
+                                   << "ok 11 12 21 22 code = " << ok11 << " " << ok12 << " " << ok21 << " " << ok22
+                                   << " " << code << std::endl;
+
+  if (code == 0)
     return;
-  } else {
-    if (secondALCT == bestALCT)
-      secondALCT.clear();
-    if (secondCLCT == bestCLCT)
-      secondCLCT.clear();
 
-    const int ok11 = doesALCTCrossCLCT(bestALCT, bestCLCT);
-    const int ok12 = doesALCTCrossCLCT(bestALCT, secondCLCT);
-    const int ok21 = doesALCTCrossCLCT(secondALCT, bestCLCT);
-    const int ok22 = doesALCTCrossCLCT(secondALCT, secondCLCT);
-    const int code = (ok11 << 3) | (ok12 << 2) | (ok21 << 1) | (ok22);
+  // LUT defines correspondence between possible ok## combinations
+  // and resulting lct1 and lct2
+  int lut[16][2] = {
+    //ok: 11 12 21 22
+    {0, 0},    // 0  0  0  0
+    {22, 0},   // 0  0  0  1
+    {21, 0},   // 0  0  1  0
+    {21, 22},  // 0  0  1  1
+    {12, 0},   // 0  1  0  0
+    {12, 22},  // 0  1  0  1
+    {12, 21},  // 0  1  1  0
+    {12, 21},  // 0  1  1  1
+    {11, 0},   // 1  0  0  0
+    {11, 22},  // 1  0  0  1
+    {11, 21},  // 1  0  1  0
+    {11, 22},  // 1  0  1  1
+    {11, 12},  // 1  1  0  0
+    {11, 22},  // 1  1  0  1
+    {11, 12},  // 1  1  1  0
+    {11, 22},  // 1  1  1  1
+  };
 
-    int dbg = 0;
-    if (dbg)
-      LogTrace("CSCMotherboardME11") << "debug correlateLCTs in ME11 " << cscId_ << std::endl
-                                     << "ALCT1: " << bestALCT << std::endl
-                                     << "ALCT2: " << secondALCT << std::endl
-                                     << "CLCT1: " << bestCLCT << std::endl
-                                     << "CLCT2: " << secondCLCT << std::endl
-                                     << "ok 11 12 21 22 code = " << ok11 << " " << ok12 << " " << ok21 << " " << ok22
-                                     << " " << code << std::endl;
+  if (dbg)
+    LogTrace("CSCUpgradeMotherboard") << "lut 0 1 = " << lut[code][0] << " " << lut[code][1] << std::endl;
 
-    if (code == 0)
-      return;
-
-    // LUT defines correspondence between possible ok## combinations
-    // and resulting lct1 and lct2
-    int lut[16][2] = {
-        //ok: 11 12 21 22
-        {0, 0},    // 0  0  0  0
-        {22, 0},   // 0  0  0  1
-        {21, 0},   // 0  0  1  0
-        {21, 22},  // 0  0  1  1
-        {12, 0},   // 0  1  0  0
-        {12, 22},  // 0  1  0  1
-        {12, 21},  // 0  1  1  0
-        {12, 21},  // 0  1  1  1
-        {11, 0},   // 1  0  0  0
-        {11, 22},  // 1  0  0  1
-        {11, 21},  // 1  0  1  0
-        {11, 22},  // 1  0  1  1
-        {11, 12},  // 1  1  0  0
-        {11, 22},  // 1  1  0  1
-        {11, 12},  // 1  1  1  0
-        {11, 22},  // 1  1  1  1
-    };
-
-    if (dbg)
-      LogTrace("CSCMotherboardME11") << "lut 0 1 = " << lut[code][0] << " " << lut[code][1] << std::endl;
-
-    switch (lut[code][0]) {
-      case 11:
-        lct1 = constructLCTs(bestALCT, bestCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 1);
-        break;
-      case 12:
-        lct1 = constructLCTs(bestALCT, secondCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 1);
-        break;
-      case 21:
-        lct1 = constructLCTs(secondALCT, bestCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 1);
-        break;
-      case 22:
-        lct1 = constructLCTs(secondALCT, secondCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 1);
-        break;
-      default:
-        return;
-    }
-
-    if (dbg)
-      LogTrace("CSCMotherboardME11") << "lct1: " << lct1 << std::endl;
-
-    switch (lut[code][1]) {
-      case 12:
-        lct2 = constructLCTs(bestALCT, secondCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 2);
-        if (dbg)
-          LogTrace("CSCMotherboardME11") << "lct2: " << lct2 << std::endl;
-        return;
-      case 21:
-        lct2 = constructLCTs(secondALCT, bestCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 2);
-        if (dbg)
-          LogTrace("CSCMotherboardME11") << "lct2: " << lct2 << std::endl;
-        return;
-      case 22:
-        lct2 = constructLCTs(secondALCT, secondCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 2);
-        if (dbg)
-          LogTrace("CSCMotherboardME11") << "lct2: " << lct2 << std::endl;
-        return;
-      default:
-        return;
-    }
-    if (dbg)
-      LogTrace("CSCMotherboardME11") << "out of correlateLCTsME11" << std::endl;
-
+  switch (lut[code][0]) {
+  case 11:
+    lct1 = constructLCTs(bestALCT, bestCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 1);
+    break;
+  case 12:
+    lct1 = constructLCTs(bestALCT, secondCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 1);
+    break;
+  case 21:
+    lct1 = constructLCTs(secondALCT, bestCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 1);
+    break;
+  case 22:
+    lct1 = constructLCTs(secondALCT, secondCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 1);
+    break;
+  default:
     return;
   }
+
+  if (dbg)
+    LogTrace("CSCUpgradeMotherboard") << "lct1: " << lct1 << std::endl;
+
+  switch (lut[code][1]) {
+  case 12:
+    lct2 = constructLCTs(bestALCT, secondCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 2);
+    if (dbg)
+      LogTrace("CSCUpgradeMotherboard") << "lct2: " << lct2 << std::endl;
+    return;
+  case 21:
+    lct2 = constructLCTs(secondALCT, bestCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 2);
+    if (dbg)
+      LogTrace("CSCUpgradeMotherboard") << "lct2: " << lct2 << std::endl;
+    return;
+  case 22:
+    lct2 = constructLCTs(secondALCT, secondCLCT, CSCCorrelatedLCTDigi::ALCTCLCT, 2);
+    if (dbg)
+      LogTrace("CSCUpgradeMotherboard") << "lct2: " << lct2 << std::endl;
+    return;
+  default:
+    return;
+  }
+  if (dbg)
+    LogTrace("CSCUpgradeMotherboard") << "out of correlateLCTsME11" << std::endl;
+
+}
+
+bool CSCUpgradeMotherboard::doesALCTCrossCLCT(const CSCALCTDigi& a, const CSCCLCTDigi& c) const {
+  return cscOverlap_->doesALCTCrossCLCT(a, c, ignoreAlctCrossClct);
 }
 
 void CSCUpgradeMotherboard::crossBxSorting() {
