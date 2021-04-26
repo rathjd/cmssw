@@ -461,11 +461,25 @@ void GEMCSCLUTAnalyzer::gemRollToCscWgLUT(const CSCLayer* keyLayer,
     const LocalPoint lp_csc_bottom(keyLayer->toLocal(gp_bottom));
 
     const int wire_top(keyLayerGeometry->nearestWire(lp_csc_top));
-    const int wg_top(keyLayerGeometry->wireGroup(wire_top));
-
     const int wire_bottom(keyLayerGeometry->nearestWire(lp_csc_bottom));
-    const int wg_bottom(keyLayerGeometry->wireGroup(wire_bottom));
 
+    int wg_top(keyLayerGeometry->wireGroup(wire_top));
+    int wg_bottom(keyLayerGeometry->wireGroup(wire_bottom));
+
+    // override for cases when the function "wireGroup" fails to provide the
+    // wiregroup number
+    const int GEM_layer = roll->id().layer();
+    const int GEM_roll = roll->id().roll();
+    if (roll->isGE21() and GEM_layer == 1) {
+      // L1 - max
+      if (GEM_roll == 10)
+        wg_top = 45;
+      // L1 - min
+      if (GEM_roll == 4)
+        wg_bottom = 80;
+      if (GEM_roll == 9)
+        wg_bottom = 46;
+    }
     lut.emplace_back(wg_bottom, wg_top);
   }
 }
