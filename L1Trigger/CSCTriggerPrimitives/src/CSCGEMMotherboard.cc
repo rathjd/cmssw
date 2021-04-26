@@ -326,7 +326,7 @@ void CSCGEMMotherboard::correlateLCTsGEM(const CSCALCTDigi& bestALCT,
 
 CSCCorrelatedLCTDigi CSCGEMMotherboard::constructLCTsGEM(const CSCALCTDigi& alct,
                                                          const CSCCLCTDigi& clct,
-                                                         const GEMInternalCluster& gem1,
+                                                         const GEMInternalCluster& gem,
                                                          int trknmb) const {
   int pattern = 0, quality = 0, bx = 0, keyStrip = 0, keyWG = 0, bend = 0, valid = 0;
 
@@ -338,11 +338,9 @@ CSCCorrelatedLCTDigi CSCGEMMotherboard::constructLCTsGEM(const CSCALCTDigi& alct
     return thisLCT;
   }
 
+  // ALCT-CLCT-GEM and ALCT-CLCT-2GEM cases
+  if (alct.isValid() and clct.isValid() and gem1.isValid()) {
 
-  /*
-
-    // Determine the case and assign properties depending on the LCT dataformat (old/new)
-    if (alct.isValid() and clct.isValid() and gem1.isValid() and not gem2.isValid()) {
     pattern = encodePattern(clct.getPattern());
     if (runCCLUT_) {
     quality = qualityAssignment_->findQualityGEMv2(alct, clct, 1);
@@ -357,7 +355,6 @@ CSCCorrelatedLCTDigi CSCGEMMotherboard::constructLCTsGEM(const CSCALCTDigi& alct
     thisLCT.setCLCT(getBXShiftedCLCT(clct));
     thisLCT.setGEM1(gem1);
     thisLCT.setType(CSCCorrelatedLCTDigi::ALCTCLCTGEM);
-    valid = doesALCTCrossCLCT(alct, clct);
     if (runCCLUT_) {
     thisLCT.setRun3(true);
     // 4-bit slope value derived with the CCLUT algorithm
@@ -365,6 +362,19 @@ CSCCorrelatedLCTDigi CSCGEMMotherboard::constructLCTsGEM(const CSCALCTDigi& alct
     thisLCT.setQuartStrip(clct.getQuartStrip());
     thisLCT.setEighthStrip(clct.getEighthStrip());
     thisLCT.setRun3Pattern(clct.getRun3Pattern());
+
+  }
+
+  // CLCT-2GEM case
+  else if (clct.isValid() and gem1.isValid()) {
+  }
+  // ALCT-2GEM case
+  else if (alct.isValid() and gem1.isValid()) {
+  }
+  /*
+
+    // Determine the case and assign properties depending on the LCT dataformat (old/new)
+    if (alct.isValid() and clct.isValid() and gem1.isValid() and not gem2.isValid()) {
     }
     } else if (alct.isValid() and clct.isValid() and not gem1.isValid() and gem2.isValid()) {
     pattern = encodePattern(clct.getPattern());
@@ -382,7 +392,6 @@ CSCCorrelatedLCTDigi CSCGEMMotherboard::constructLCTsGEM(const CSCALCTDigi& alct
     thisLCT.setGEM1(gem2.first());
     thisLCT.setGEM2(gem2.second());
     thisLCT.setType(CSCCorrelatedLCTDigi::ALCTCLCT2GEM);
-    valid = doesALCTCrossCLCT(alct, clct);
     if (runCCLUT_) {
     thisLCT.setRun3(true);
     // 4-bit slope value derived with the CCLUT algorithm
