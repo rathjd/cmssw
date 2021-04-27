@@ -338,14 +338,15 @@ CSCCorrelatedLCTDigi CSCGEMMotherboard::constructLCTsGEM(const CSCALCTDigi& alct
     return thisLCT;
   }
 
+  std::cout<<pattern << quality << bx << keyStrip << keyWG << bend << valid <<std::endl;//stops compiler errors -- fixit --
   // ALCT-CLCT-GEM and ALCT-CLCT-2GEM cases
-  if (alct.isValid() and clct.isValid() and gem1.isValid()) {
+  if (alct.isValid() and clct.isValid()){// and gem1.isValid()) { //removed for the moment, as GEMInternalCluster has no function "isValid()", gem1 is not defined either -- fixit --
 
     pattern = encodePattern(clct.getPattern());
     if (runCCLUT_) {
-    quality = qualityAssignment_->findQualityGEMv2(alct, clct, 1);
+      quality = qualityAssignment_->findQualityGEMv2(alct, clct, 1);
     } else {
-    quality = qualityAssignment_->findQualityGEMv1(alct, clct, 1);
+      quality = qualityAssignment_->findQualityGEMv1(alct, clct, 1);
     }
     bx = alct.getBX();
     keyStrip = clct.getKeyStrip();
@@ -353,23 +354,24 @@ CSCCorrelatedLCTDigi CSCGEMMotherboard::constructLCTsGEM(const CSCALCTDigi& alct
     bend = clct.getBend();
     thisLCT.setALCT(getBXShiftedALCT(alct));
     thisLCT.setCLCT(getBXShiftedCLCT(clct));
-    thisLCT.setGEM1(gem1);
+    //thisLCT.setGEM1(gem); //does currently expect setGEM1(const GEMPadDigi& gem) , but gets GEMInternalCluster -- fixit --
     thisLCT.setType(CSCCorrelatedLCTDigi::ALCTCLCTGEM);
     if (runCCLUT_) {
-    thisLCT.setRun3(true);
-    // 4-bit slope value derived with the CCLUT algorithm
-    thisLCT.setSlope(clct.getSlope());
-    thisLCT.setQuartStrip(clct.getQuartStrip());
-    thisLCT.setEighthStrip(clct.getEighthStrip());
-    thisLCT.setRun3Pattern(clct.getRun3Pattern());
+      thisLCT.setRun3(true);
+      // 4-bit slope value derived with the CCLUT algorithm
+      thisLCT.setSlope(clct.getSlope());
+      thisLCT.setQuartStrip(clct.getQuartStrip());
+      thisLCT.setEighthStrip(clct.getEighthStrip());
+      thisLCT.setRun3Pattern(clct.getRun3Pattern());
+    }
 
   }
 
   // CLCT-2GEM case
-  else if (clct.isValid() and gem1.isValid()) {
+  else if (clct.isValid()){// and gem1.isValid()) { //gem1 is not defined, isValid() doesn't exist for GEMInternalCluster -- fixit --
   }
   // ALCT-2GEM case
-  else if (alct.isValid() and gem1.isValid()) {
+  else if (alct.isValid()){// and gem1.isValid()) { //gem1 is not defined, isValid() doesn't exist for GEMInternalCluster -- fixit -- 
   }
   /*
 
