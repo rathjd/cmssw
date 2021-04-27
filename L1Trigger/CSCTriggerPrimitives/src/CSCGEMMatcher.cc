@@ -7,11 +7,27 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include <algorithm>
+#include <math.h>
 
-CSCGEMMatcher::CSCGEMMatcher(unsigned endcap, unsigned station, unsigned chamber, const edm::ParameterSet& luts)
+CSCGEMMatcher::CSCGEMMatcher(int endcap, unsigned station, unsigned chamber, const edm::ParameterSet& luts)
     : endcap_(endcap), station_(station), chamber_(chamber)
 {
 
+}
+
+int CSCGEMMatcher::CSCGEMSlopeCorrector(bool isFacing, bool isL1orCopad, int cscSlope) const {
+
+  //Slope correction fit values for GEM to any CSC combinations
+  float Erf[4][2]={{63., 9.6},{118., 7.4},{52., 9.5},{106., 7.1}}; //constants for facing layers
+  float Lin[4][2]={{1.1, 5.8},{0.7, 16.7},{-1.3, 4.2},{-7.4, 14.}};//constants for off-side layers
+
+  //determine shift by slope correction
+  float SlopeShift=0.;
+  int ChooseCorr = (chamber_ % 2) + (isL1orCopad ? 0 : 2); //chooses applicable constants
+  if(isFacing) SlopeShift = Erf[ChooseCorr][0] * std::erf(cscSlope / Erf[ChooseCorr][1]);
+  else         SlopeShift = Lin[ChooseCorr + 1][0] + Lin[ChooseCorr + 1][1] * cscSlope;
+  
+  return round(SlopeShift * endcap_);
 }
 
 // match an ALCT to GEMInternalCluster by bunch-crossing
@@ -97,12 +113,19 @@ CSCGEMMatcher::GEMInternalClusters CSCGEMMatcher::matchingClustersLoc(const CSCC
 
     // key 1/8-strip
     int key_es = -1;
+    
+    //modification of DeltaStrip by CLCT slope
+    int SlopeShift = 0;
+    float clctSlope = pow(-1, clct.getBend()) * clct.getSlope();
 
     // for coincidences or single clusters in L1
     if (cl.isCoincidence() or cl.id().layer() == 1) {
       key_es = cl.layer1_middle_es();
       if (station_ == 1 and clct.getKeyStrip() > CSCConstants::MAX_HALF_STRIP_ME1B)
         key_es = cl.layer1_middle_es_me1a();
+
+      //set SlopeShift for L1 or Copad case
+      SlopeShift = CSCGEMSlopeCorrector(true, true, clctSlope); // currently fixed to facing detectors, must be determined at motherboard level
     }
 
     // for single clusters in L2
@@ -110,15 +133,23 @@ CSCGEMMatcher::GEMInternalClusters CSCGEMMatcher::matchingClustersLoc(const CSCC
       key_es = cl.layer2_middle_es();
       if (station_ == 1 and clct.getKeyStrip() > CSCConstants::MAX_HALF_STRIP_ME1B)
         key_es = cl.layer2_middle_es_me1a();
+
+      //set SlopeShift for L2 case
+      SlopeShift = CSCGEMSlopeCorrector(true, false, clctSlope); // currently fixed to facing detectors, must be determined at motherboard level
+      
     }
     
     else edm::LogWarning("CSCGEMMatcher") << "cluster.id().layer =" << cl.id().layer() << " out of acceptable range 1-2!";
 
     // matching by 1/8-strip
-    // need new function from Denis here!!!
-    if (key_es <= clct.getKeyStrip(8) and clct.getKeyStrip(8) <= key_es)
-      output.push_back(cl);
+    // determine matching window by chamber, assuming facing chambers only are processed
+    int window = chamber_ % 2 == 0 ? 20 : 40;
+
+    if (abs(clct.getKeyStrip(8) - key_es + SlopeShift) < window)
+      output.push_back(cl); // currently pushes back all clusters in window, might want to only push back closest?
   }
+
+
 
   return output;
 }

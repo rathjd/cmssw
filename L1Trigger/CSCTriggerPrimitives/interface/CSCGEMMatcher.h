@@ -24,7 +24,10 @@ class CSCGEMMatcher {
 public:
   typedef std::vector<GEMInternalCluster> GEMInternalClusters;
 
-  CSCGEMMatcher(unsigned endcap, unsigned station, unsigned chamber, const edm::ParameterSet& luts);
+  CSCGEMMatcher(int endcap, unsigned station, unsigned chamber, const edm::ParameterSet& luts);
+
+  // calculate slope correction
+  int CSCGEMSlopeCorrector(const bool isFacing, const bool isL1orCopad, const int cscSlope) const;
 
   // match by BX
 
