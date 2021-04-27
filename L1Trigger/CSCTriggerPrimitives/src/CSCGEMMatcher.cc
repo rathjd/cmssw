@@ -4,6 +4,7 @@
 #include "DataFormats/CSCDigi/interface/CSCConstants.h"
 #include "DataFormats/CSCDigi/interface/CSCALCTDigi.h"
 #include "DataFormats/CSCDigi/interface/CSCCLCTDigi.h"
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include <algorithm>
 
