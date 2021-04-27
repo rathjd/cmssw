@@ -105,11 +105,13 @@ CSCGEMMatcher::GEMInternalClusters CSCGEMMatcher::matchingClustersLoc(const CSCC
     }
 
     // for single clusters in L2
-    if (cl.id().layer() == 1) {
+    else if (cl.id().layer() == 2) {
       key_es = cl.layer2_middle_es();
       if (station_ == 1 and clct.getKeyStrip() > CSCConstants::MAX_HALF_STRIP_ME1B)
         key_es = cl.layer2_middle_es_me1a();
     }
+    
+    else edm::LogWarning("CSCGEMMatcher") << "cluster.id().layer =" << cl.id().layer() << " out of acceptable range 1-2!";
 
     // matching by 1/8-strip
     // need new function from Denis here!!!
