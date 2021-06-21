@@ -10,7 +10,7 @@
 #include <cmath>
 
 CSCGEMMatcher::CSCGEMMatcher(
-    int endcap, unsigned station, unsigned chamber, const edm::ParameterSet& tmbParams, const edm::ParameterSet& luts)
+    int endcap, unsigned station, unsigned chamber, const edm::ParameterSet& tmbParams, const edm::ParameterSet& conf)
     : endcap_(endcap), station_(station), chamber_(chamber) {
   isEven_ = (chamber_ % 2 == 0);
 
@@ -27,7 +27,7 @@ CSCGEMMatcher::CSCGEMMatcher(
 
   assign_gem_csc_bending_ = tmbParams.getParameter<bool>("assignGEMCSCBending");
 
-  gemCscSlopeCorrectionFiles_ = luts.getParameter<std::vector<std::string>>("gemCscSlopeCorrectionFiles");
+  gemCscSlopeCorrectionFiles_ = conf.getParameter<std::vector<std::string>>("gemCscSlopeCorrectionFiles");
 
   gem_csc_slope_corr_L1_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[0]);
   gem_csc_slope_corr_L2_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[1]);
@@ -35,9 +35,9 @@ CSCGEMMatcher::CSCGEMMatcher(
   gem_csc_slope_corr_L2_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[3]);
 
   if (assign_gem_csc_bending_) {
-    esDiffToSlopeME1aFiles_ = luts.getParameter<std::vector<std::string>>("esDiffToSlopeME1aFiles");
-    esDiffToSlopeME1bFiles_ = luts.getParameter<std::vector<std::string>>("esDiffToSlopeME1bFiles");
-    esDiffToSlopeME21Files_ = luts.getParameter<std::vector<std::string>>("esDiffToSlopeME21Files");
+    esDiffToSlopeME1aFiles_ = conf.getParameter<std::vector<std::string>>("esDiffToSlopeME1aFiles");
+    esDiffToSlopeME1bFiles_ = conf.getParameter<std::vector<std::string>>("esDiffToSlopeME1bFiles");
+    esDiffToSlopeME21Files_ = conf.getParameter<std::vector<std::string>>("esDiffToSlopeME21Files");
 
     es_diff_slope_L1_ME1a_even_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1aFiles_[0]);
     es_diff_slope_L1_ME1a_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1aFiles_[1]);
