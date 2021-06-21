@@ -1,4 +1,4 @@
-#include "L1Trigger/CSCTriggerPrimitives/interface/GEMCoPadProcessor.h"
+#include "L1Trigger/CSCTriggerPrimitives/interface/GEMClusterProcessor.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include <algorithm>
@@ -8,9 +8,8 @@
 // Constructors --
 //----------------
 
-GEMCoPadProcessor::GEMCoPadProcessor(int region, unsigned station, unsigned chamber, const edm::ParameterSet& conf)
+GEMClusterProcessor::GEMClusterProcessor(int region, unsigned station, unsigned chamber, const edm::ParameterSet& conf)
     : theRegion(region), theStation(station), theChamber(chamber) {
-  const edm::ParameterSet luts(conf.getParameter<edm::ParameterSet>("gemcscParams"));
   const edm::ParameterSet copad(station == 1 ? conf.getParameter<edm::ParameterSet>("copadParamGE11")
                                              : conf.getParameter<edm::ParameterSet>("copadParamGE21"));
 
@@ -19,18 +18,18 @@ GEMCoPadProcessor::GEMCoPadProcessor(int region, unsigned station, unsigned cham
   maxDeltaRoll_ = copad.getParameter<unsigned int>("maxDeltaRoll");
   maxDeltaBX_ = copad.getParameter<unsigned int>("maxDeltaBX");
 
-  padToHsME1aFiles_ = luts.getParameter<std::vector<std::string>>("padToHsME1aFiles");
-  padToHsME1bFiles_ = luts.getParameter<std::vector<std::string>>("padToHsME1bFiles");
-  padToHsME21Files_ = luts.getParameter<std::vector<std::string>>("padToHsME21Files");
+  padToHsME1aFiles_ = conf.getParameter<std::vector<std::string>>("padToHsME1aFiles");
+  padToHsME1bFiles_ = conf.getParameter<std::vector<std::string>>("padToHsME1bFiles");
+  padToHsME21Files_ = conf.getParameter<std::vector<std::string>>("padToHsME21Files");
 
-  padToEsME1aFiles_ = luts.getParameter<std::vector<std::string>>("padToEsME1aFiles");
-  padToEsME1bFiles_ = luts.getParameter<std::vector<std::string>>("padToEsME1bFiles");
-  padToEsME21Files_ = luts.getParameter<std::vector<std::string>>("padToEsME21Files");
+  padToEsME1aFiles_ = conf.getParameter<std::vector<std::string>>("padToEsME1aFiles");
+  padToEsME1bFiles_ = conf.getParameter<std::vector<std::string>>("padToEsME1bFiles");
+  padToEsME21Files_ = conf.getParameter<std::vector<std::string>>("padToEsME21Files");
 
-  rollToMaxWgME11Files_ = luts.getParameter<std::vector<std::string>>("rollToMaxWgME11Files");
-  rollToMinWgME11Files_ = luts.getParameter<std::vector<std::string>>("rollToMinWgME11Files");
-  rollToMaxWgME21Files_ = luts.getParameter<std::vector<std::string>>("rollToMaxWgME21Files");
-  rollToMinWgME21Files_ = luts.getParameter<std::vector<std::string>>("rollToMinWgME21Files");
+  rollToMaxWgME11Files_ = conf.getParameter<std::vector<std::string>>("rollToMaxWgME11Files");
+  rollToMinWgME11Files_ = conf.getParameter<std::vector<std::string>>("rollToMinWgME11Files");
+  rollToMaxWgME21Files_ = conf.getParameter<std::vector<std::string>>("rollToMaxWgME21Files");
+  rollToMinWgME21Files_ = conf.getParameter<std::vector<std::string>>("rollToMinWgME21Files");
 
   GEMCSCLUT_pad_hs_ME1a_even_ = std::make_unique<CSCLUTReader>(padToHsME1aFiles_[0]);
   GEMCSCLUT_pad_hs_ME1a_odd_ = std::make_unique<CSCLUTReader>(padToHsME1aFiles_[1]);
@@ -67,74 +66,9 @@ GEMCoPadProcessor::GEMCoPadProcessor(int region, unsigned station, unsigned cham
   GEMCSCLUT_roll_l2_max_wg_ME21_odd_ = std::make_unique<CSCLUTReader>(rollToMaxWgME21Files_[3]);
 }
 
-void GEMCoPadProcessor::clear() {
-  gemCoPadV.clear();
-  clusters_.clear();
-}
+void GEMClusterProcessor::clear() { clusters_.clear(); }
 
-std::vector<GEMCoPadDigi> GEMCoPadProcessor::run(const GEMPadDigiCollection* in_pads) {
-  clear();
-
-  // Build coincidences
-  for (auto det_range = in_pads->begin(); det_range != in_pads->end(); ++det_range) {
-    const GEMDetId& id = (*det_range).first;
-
-    // coincidence pads are not built for ME0
-    if (id.isME0())
-      continue;
-
-    // same chamber (no restriction on the roll number)
-    if (id.region() != theRegion or id.station() != theStation or id.chamber() != theChamber)
-      continue;
-
-    // all coincidences detIDs will have layer=1
-    if (id.layer() != 1)
-      continue;
-
-    // find all corresponding ids with layer 2 and same roll that differs at most maxDeltaRoll_
-    for (unsigned int roll = id.roll() - maxDeltaRoll_; roll <= id.roll() + maxDeltaRoll_; ++roll) {
-      GEMDetId co_id(id.region(), id.ring(), id.station(), 2, id.chamber(), roll);
-
-      auto co_pads_range = in_pads->get(co_id);
-
-      // empty range = no possible coincidence pads
-      if (co_pads_range.first == co_pads_range.second)
-        continue;
-
-      // now let's correlate the pads in two layers of this partition
-      const auto& pads_range = (*det_range).second;
-      for (auto p = pads_range.first; p != pads_range.second; ++p) {
-        // ignore 16-partition GE2/1 pads
-        if (id.isGE21() and p->nPartitions() == GEMPadDigi::GE21SplitStrip)
-          continue;
-
-        // only consider valid pads
-        if (!p->isValid())
-          continue;
-
-        for (auto co_p = co_pads_range.first; co_p != co_pads_range.second; ++co_p) {
-          // only consider valid pads
-          if (!co_p->isValid())
-            continue;
-
-          // check the match in pad
-          if ((unsigned)std::abs(p->pad() - co_p->pad()) > maxDeltaPad_)
-            continue;
-
-          // check the match in BX
-          if ((unsigned)std::abs(p->bx() - co_p->bx()) > maxDeltaBX_)
-            continue;
-
-          // make a new coincidence pad digi
-          gemCoPadV.push_back(GEMCoPadDigi(id.roll(), *p, *co_p));
-        }
-      }
-    }
-  }
-  return gemCoPadV;
-}
-
-std::vector<GEMInternalCluster> GEMCoPadProcessor::run(const GEMPadDigiClusterCollection* in_clusters) {
+void GEMClusterProcessor::run(const GEMPadDigiClusterCollection* in_clusters) {
   // Step 1: clear the GEMInternalCluster vector
   clear();
 
@@ -147,12 +81,35 @@ std::vector<GEMInternalCluster> GEMCoPadProcessor::run(const GEMPadDigiClusterCo
 
   // Step 4: translate the cluster central pad numbers into 1/8-strip number for matching with CSC trigger primitives
   doCoordinateConversion();
-
-  // Step 5: return the vector with internal clusters
-  return clusters_;
 }
 
-void GEMCoPadProcessor::addCoincidenceClusters(const GEMPadDigiClusterCollection* in_clusters) {
+std::vector<GEMInternalCluster> GEMClusterProcessor::getClusters(int bx) const {
+  std::vector<GEMInternalCluster> output;
+
+  for (const auto& cl : clusters_) {
+    // valid single clusters with the right BX
+    if (cl.bx() == bx and cl.isValid()) {
+      output.push_back(cl);
+    }
+  }
+
+  return output;
+}
+
+std::vector<GEMInternalCluster> GEMClusterProcessor::getCoincidenceClusters(int bx) const {
+  std::vector<GEMInternalCluster> output;
+
+  for (const auto& cl : clusters_) {
+    // valid coincidences with the right BX
+    if (cl.bx() == bx and cl.isCoincidence()) {
+      output.push_back(cl);
+    }
+  }
+
+  return output;
+}
+
+void GEMClusterProcessor::addCoincidenceClusters(const GEMPadDigiClusterCollection* in_clusters) {
   // Build coincidences
   for (auto det_range = in_clusters->begin(); det_range != in_clusters->end(); ++det_range) {
     const GEMDetId& id = (*det_range).first;
@@ -182,8 +139,8 @@ void GEMCoPadProcessor::addCoincidenceClusters(const GEMPadDigiClusterCollection
       // now let's correlate the pads in two layers of this partition
       const auto& pads_range = (*det_range).second;
       for (auto p = pads_range.first; p != pads_range.second; ++p) {
-        // ignore 16-partition GE2/1 pads
-        if (id.isGE21() and p->nPartitions() == GEMPadDigi::GE21SplitStrip)
+        // ignore 8-partition GE2/1 pads
+        if (id.isGE21() and p->nPartitions() == GEMPadDigi::GE21)
           continue;
 
         // only consider valid pads
@@ -223,12 +180,15 @@ void GEMCoPadProcessor::addCoincidenceClusters(const GEMPadDigiClusterCollection
   }
 }
 
-void GEMCoPadProcessor::addSingleClusters(const GEMPadDigiClusterCollection* in_clusters) {
+void GEMClusterProcessor::addSingleClusters(const GEMPadDigiClusterCollection* in_clusters) {
+  // first get the coincidences
+  const std::vector<GEMInternalCluster>& coincidences = clusters_;
+
   // now start add single clusters
   for (auto det_range = in_clusters->begin(); det_range != in_clusters->end(); ++det_range) {
     const GEMDetId& id = (*det_range).first;
 
-    // coincidence pads are not built for ME0
+    // ignore ME0
     if (id.isME0())
       continue;
 
@@ -242,14 +202,14 @@ void GEMCoPadProcessor::addSingleClusters(const GEMPadDigiClusterCollection* in_
       if (p->isValid())
         continue;
 
-      // ignore 16-partition GE2/1 pads
-      if (id.isGE21() and p->nPartitions() == GEMPadDigiCluster::GE21SplitStrip)
+      // ignore 8-partition GE2/1 pads
+      if (id.isGE21() and p->nPartitions() == GEMPadDigiCluster::GE21)
         continue;
 
       // ignore clusters already contained in a coincidence cluster
-      if (std::find_if(std::begin(clusters_), std::end(clusters_), [p](const GEMInternalCluster& q) {
+      if (std::find_if(std::begin(coincidences), std::end(coincidences), [p](const GEMInternalCluster& q) {
             return q.has_cluster(*p);
-          }) != std::end(clusters_))
+          }) != std::end(coincidences))
         continue;
 
       // put the single clusters into the collection
@@ -261,7 +221,7 @@ void GEMCoPadProcessor::addSingleClusters(const GEMPadDigiClusterCollection* in_
   }
 }
 
-void GEMCoPadProcessor::doCoordinateConversion() {
+void GEMClusterProcessor::doCoordinateConversion() {
   // loop on clusters
   for (auto& cluster : clusters_) {
     // starting coordinates
@@ -478,33 +438,18 @@ void GEMCoPadProcessor::doCoordinateConversion() {
   }
 }
 
-const std::vector<GEMCoPadDigi>& GEMCoPadProcessor::readoutCoPads() const { return gemCoPadV; }
+std::vector<GEMCoPadDigi> GEMClusterProcessor::readoutCoPads() const {
+  std::vector<GEMCoPadDigi> output;
 
-void GEMCoPadProcessor::declusterize(const GEMPadDigiClusterCollection* in_clusters,
-                                     GEMPadDigiCollection& out_pads) const {
-  for (auto detUnitIt = in_clusters->begin(); detUnitIt != in_clusters->end(); ++detUnitIt) {
-    const GEMDetId& id = (*detUnitIt).first;
-    const auto& range = (*detUnitIt).second;
-    for (auto digiIt = range.first; digiIt != range.second; ++digiIt) {
-      // coincidence pads are not built for ME0
-      if (id.isME0())
-        continue;
+  // loop on clusters
+  for (const auto& cluster : clusters_) {
+    // ignore single clusters
+    if (!cluster.isCoincidence())
+      continue;
 
-      // same chamber (no restriction on the roll number)
-      if (id.region() != theRegion or id.station() != theStation or id.chamber() != theChamber)
-        continue;
-
-      // ignore 16-partition GE2/1 pads
-      if (id.isGE21() and digiIt->nPartitions() == GEMPadDigiCluster::GE21SplitStrip)
-        continue;
-
-      // only consider valid clusters
-      if (!digiIt->isValid())
-        continue;
-
-      for (const auto& p : digiIt->pads()) {
-        out_pads.insertDigi(id, GEMPadDigi(p, digiIt->bx()));
-      }
-    }
+    // construct coincidence pads out of the centers of the coincidence clusters
+    output.emplace_back(cluster.roll(), cluster.mid1(), cluster.mid2());
   }
+
+  return output;
 }

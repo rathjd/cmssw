@@ -1,7 +1,7 @@
-#ifndef L1Trigger_CSCTriggerPrimitives_GEMCoPadProcessor_h
-#define L1Trigger_CSCTriggerPrimitives_GEMCoPadProcessor_h
+#ifndef L1Trigger_CSCTriggerPrimitives_GEMClusterProcessor_h
+#define L1Trigger_CSCTriggerPrimitives_GEMClusterProcessor_h
 
-/** \class GEMCoPadProcessor
+/** \class GEMClusterProcessor
  *
  * \author Sven Dildick (TAMU)
  *
@@ -16,26 +16,25 @@
 
 #include <vector>
 
-class GEMCoPadProcessor {
+class GEMClusterProcessor {
 public:
   /** Normal constructor. */
-  GEMCoPadProcessor(int region, unsigned station, unsigned chamber, const edm::ParameterSet& conf);
+  GEMClusterProcessor(int region, unsigned station, unsigned chamber, const edm::ParameterSet& conf);
 
   /** Clear copad vector */
   void clear();
 
-  /** Runs the CoPad processor code. Called in normal running -- gets info from
-      a collection of pad digis. */
-  std::vector<GEMCoPadDigi> run(const GEMPadDigiCollection*);
-
   /** Runs the CoPad processor code. */
-  std::vector<GEMInternalCluster> run(const GEMPadDigiClusterCollection*);
+  void run(const GEMPadDigiClusterCollection*);
+
+  /* Returns clusters for a given BX */
+  std::vector<GEMInternalCluster> getClusters(int bx) const;
+
+  /* Returns coincidence clusters for a given BX */
+  std::vector<GEMInternalCluster> getCoincidenceClusters(int bx) const;
 
   /** Returns vector of CoPads in the read-out time window, if any. */
-  const std::vector<GEMCoPadDigi>& readoutCoPads() const;
-
-  // declusterizes the clusters into single pad digis
-  void declusterize(const GEMPadDigiClusterCollection*, GEMPadDigiCollection&) const;
+  std::vector<GEMCoPadDigi> readoutCoPads() const;
 
 private:
   // put coincidence clusters in GEMInternalCluster vector
@@ -61,7 +60,6 @@ private:
   unsigned int maxDeltaRoll_;
 
   // output collection
-  std::vector<GEMCoPadDigi> gemCoPadV;
   std::vector<GEMInternalCluster> clusters_;
 
   // strings to paths of LUTs
