@@ -57,7 +57,7 @@ void CSCGEMMotherboard::run(const CSCWireDigiCollection* wiredc,
   clear();
 
   // check for GEM geometry
-  if (gem_g != nullptr) {
+  if (gem_g == nullptr) {
     edm::LogError("CSCGEMMotherboard") << "run() called for GEM-CSC integrated trigger without valid GEM geometry! \n";
     return;
   }
