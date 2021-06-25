@@ -148,7 +148,6 @@ void CSCTriggerPrimitivesBuilder::build(const CSCBadChambers* badChambers,
 
             // GE1/1-ME1/1 integrated local trigger or GE2/1-ME2/1 integrated local trigger
             if (upgradeGE11 or upgradeGE21) {
-
               // run the TMB
               CSCGEMMotherboard* tmbGEM = static_cast<CSCGEMMotherboard*>(tmb);
               tmbGEM->setGEMGeometry(gem_g);
