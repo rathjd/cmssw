@@ -386,8 +386,15 @@ void CSCGEMMotherboard::correlateLCTsGEM(const CSCALCTDigi& bALCT,
   // retain best two
   lcts.resize(CSCConstants::MAX_LCTS_PER_CSC);
 
-  lct1 = lcts[0];
-  lct2 = lcts[1];
+  if (lcts[0].isValid()) {
+    lct1 = lcts[0];
+    lct1.setTrknmb(1);
+  }
+
+  if (lcts[1].isValid()) {
+    lct2 = lcts[1];
+    lct2.setTrknmb(2);
+  }
 }
 
 CSCCorrelatedLCTDigi CSCGEMMotherboard::constructLCTsGEM(const CSCALCTDigi& alct,
@@ -400,6 +407,7 @@ CSCCorrelatedLCTDigi CSCGEMMotherboard::constructLCTsGEM(const CSCALCTDigi& alct
   } else {
     thisLCT.setType(CSCCorrelatedLCTDigi::ALCTCLCTGEM);
   }
+  thisLCT.setQuality(qualityAssignment_->findQualityGEMv1(alct, clct, gem));
   thisLCT.setALCT(getBXShiftedALCT(alct));
   thisLCT.setCLCT(getBXShiftedCLCT(clct));
   thisLCT.setGEM1(gem.mid1());
@@ -416,6 +424,7 @@ CSCCorrelatedLCTDigi CSCGEMMotherboard::constructLCTsGEM(const CSCALCTDigi& alct
   thisLCT.setBend(clct.getBend());
   thisLCT.setBX(alct.getBX());
   if (runCCLUT_) {
+    thisLCT.setQuality(qualityAssignment_->findQualityGEMv2(alct, clct, gem, assign_gem_csc_bending_));
     thisLCT.setRun3(true);
     if (assign_gem_csc_bending_)
       thisLCT.setSlope(cscGEMMatcher_->calculateGEMCSCBending(clct, gem));
