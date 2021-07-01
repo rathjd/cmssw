@@ -169,7 +169,7 @@ void GEMCSCLUTAnalyzer::generateLUTsME11(const CSCDetId& id) const {
 
   ofos.open("GEMCSCLUT_pad_hs_ME1b" + oddeven + ".txt");
   ofos << "#<header> v1.0 8 32 </header>\n";
-  i=0;
+  i = 0;
   for (const auto& p : gemPadToCscHsME1b) {
     ofos << p << std::endl;
     i++;
@@ -178,7 +178,7 @@ void GEMCSCLUTAnalyzer::generateLUTsME11(const CSCDetId& id) const {
 
   ofos.open("GEMCSCLUT_pad_es_ME1a" + oddeven + ".txt");
   ofos << "#<header> v1.0 8 32 </header>\n";
-  i=0;
+  i = 0;
   for (const auto& p : gemPadToCscEsME1a) {
     ofos << p << std::endl;
     i++;
@@ -187,7 +187,7 @@ void GEMCSCLUTAnalyzer::generateLUTsME11(const CSCDetId& id) const {
 
   ofos.open("GEMCSCLUT_pad_es_ME1b" + oddeven + ".txt");
   ofos << "#<header> v1.0 8 32 </header>\n";
-  i=0;
+  i = 0;
   for (const auto& p : gemPadToCscEsME1b) {
     ofos << p << std::endl;
     i++;
@@ -196,7 +196,7 @@ void GEMCSCLUTAnalyzer::generateLUTsME11(const CSCDetId& id) const {
 
   ofos.open("GEMCSCLUT_roll_l1_min_wg_ME11" + oddeven + ".txt");
   ofos << "#<header> v1.0 3 32 </header>\n";
-  i=0;
+  i = 0;
   for (const auto& p : gemRollL1ToCscWg) {
     ofos << p.first << std::endl;
     i++;
@@ -205,7 +205,7 @@ void GEMCSCLUTAnalyzer::generateLUTsME11(const CSCDetId& id) const {
 
   ofos.open("GEMCSCLUT_roll_l1_max_wg_ME11" + oddeven + ".txt");
   ofos << "#<header> v1.0 3 32 </header>\n";
-  i=0;
+  i = 0;
   for (const auto& p : gemRollL1ToCscWg) {
     ofos << p.second << std::endl;
     i++;
@@ -214,7 +214,7 @@ void GEMCSCLUTAnalyzer::generateLUTsME11(const CSCDetId& id) const {
 
   ofos.open("GEMCSCLUT_roll_l2_min_wg_ME11" + oddeven + ".txt");
   ofos << "#<header> v1.0 3 32 </header>\n";
-  i=0;
+  i = 0;
   for (const auto& p : gemRollL2ToCscWg) {
     ofos << p.first << std::endl;
     i++;
@@ -223,7 +223,7 @@ void GEMCSCLUTAnalyzer::generateLUTsME11(const CSCDetId& id) const {
 
   ofos.open("GEMCSCLUT_roll_l2_max_wg_ME11" + oddeven + ".txt");
   ofos << "#<header> v1.0 3 32 </header>\n";
-  i=0;
+  i = 0;
   for (const auto& p : gemRollL2ToCscWg) {
     ofos << p.second << std::endl;
     i++;
