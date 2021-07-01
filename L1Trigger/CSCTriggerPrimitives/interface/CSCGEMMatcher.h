@@ -107,7 +107,7 @@ public:
 
 private:
   //mitigate slope by consistency of slope indicator, if necessary
-  uint16_t MitigatedSlopeByConsistency(const CSCCLCTDigi& clct) const;
+  uint16_t mitigatedSlopeByConsistency(const CSCCLCTDigi& clct) const;
 
   // calculate slope correction
   int CSCGEMSlopeCorrector(const bool isL1orCopad, const int cscSlope) const;
@@ -127,7 +127,7 @@ private:
   unsigned maxDeltaHsOddME1a_;
 
   bool assign_gem_csc_bending_;
-  bool MitigateSlopeByCosi_;
+  bool mitigateSlopeByCosi_;
 
   // strings to paths of LUTs
   std::vector<std::string> gemCscSlopeCorrectionFiles_;

@@ -25,14 +25,34 @@ CSCGEMMatcher::CSCGEMMatcher(
     maxDeltaHsOddME1a_ = tmbParams.getParameter<unsigned>("maxDeltaHsOddME1a");
   }
 
+  mitigateSlopeByCosi_ = tmbParams.getParameter<bool>("mitigateSlopeByCosi");
   assign_gem_csc_bending_ = tmbParams.getParameter<bool>("assignGEMCSCBending");
 
-  gemCscSlopeCorrectionFiles_ = conf.getParameter<std::vector<std::string>>("gemCscSlopeCorrectionFiles");
+  if (mitigateSlopeByCosi_) {
+    gemCscSlopeCosiFiles_ = conf.getParameter<std::vector<std::string> >("gemCscSlopeCosiFiles");
 
-  gem_csc_slope_corr_L1_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[0]);
-  gem_csc_slope_corr_L2_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[1]);
-  gem_csc_slope_corr_L1_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[2]);
-  gem_csc_slope_corr_L2_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[3]);
+    gem_csc_slope_cosi_2to1_L1_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiFiles_[0]);
+    gem_csc_slope_cosi_2to1_L1_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiFiles_[1]);
+    gem_csc_slope_cosi_3to1_L1_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiFiles_[2]);
+    gem_csc_slope_cosi_3to1_L1_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiFiles_[3]);
+
+    gemCscSlopeCorrectionFiles_ = conf.getParameter<std::vector<std::string> >("gemCscSlopeCosiCorrectionFiles");
+
+    gem_csc_slope_cosi_corr_L1_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiCorrectionFiles_[0]);
+    gem_csc_slope_cosi_corr_L2_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiCorrectionFiles_[1]);
+    gem_csc_slope_cosi_corr_L1_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiCorrectionFiles_[2]);
+    gem_csc_slope_cosi_corr_L2_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiCorrectionFiles_[3]);
+  }
+  else {
+    gemCscSlopeCorrectionFiles_ = conf.getParameter<std::vector<std::string> >("gemCscSlopeCorrectionFiles");
+
+    gem_csc_slope_corr_L1_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[0]);
+    gem_csc_slope_corr_L2_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[1]);
+    gem_csc_slope_corr_L1_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[2]);
+    gem_csc_slope_corr_L2_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[3]);
+  }
+
+
 
   if (assign_gem_csc_bending_) {
 
@@ -60,33 +80,6 @@ CSCGEMMatcher::CSCGEMMatcher(
       es_diff_slope_L2_ME21_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME21Files_[3]);
     }
   }
-
-  MitigateSlopeByCosi_ = tmbParams.getParameter<bool>("mitigateSlopeByCosi");
-
-  if (MitigateSlopeByCosi_) {
-    gemCscSlopeCosiFiles_ = luts.getParameter<std::vector<std::string> >("gemCscSlopeCosiFiles");
-
-    gem_csc_slope_cosi_2to1_L1_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiFiles_[0]);
-    gem_csc_slope_cosi_2to1_L1_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiFiles_[1]);
-    gem_csc_slope_cosi_3to1_L1_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiFiles_[2]);
-    gem_csc_slope_cosi_3to1_L1_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiFiles_[3]);
-
-    gemCscSlopeCorrectionFiles_ = luts.getParameter<std::vector<std::string> >("gemCscSlopeCosiCorrectionFiles");
-
-    gem_csc_slope_cosi_corr_L1_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiCorrectionFiles_[0]);
-    gem_csc_slope_cosi_corr_L2_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiCorrectionFiles_[1]);
-    gem_csc_slope_cosi_corr_L1_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiCorrectionFiles_[2]);
-    gem_csc_slope_cosi_corr_L2_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCosiCorrectionFiles_[3]);
-  }
-  else {
-    gemCscSlopeCorrectionFiles_ = luts.getParameter<std::vector<std::string> >("gemCscSlopeCorrectionFiles");
-
-    gem_csc_slope_corr_L1_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[0]);
-    gem_csc_slope_corr_L2_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[1]);
-    gem_csc_slope_corr_L1_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[2]);
-    gem_csc_slope_corr_L2_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[3]);
-  }
-  
 }
 
 unsigned CSCGEMMatcher::calculateGEMCSCBending(const CSCCLCTDigi& clct, const GEMInternalCluster& cluster) const {
@@ -263,7 +256,7 @@ bool CSCGEMMatcher::matchedClusterLocES(const CSCCLCTDigi& clct, const GEMIntern
   //modification of DeltaStrip by CLCT slope
   int SlopeShift = 0;
   uint16_t baseSlope = 0;
-  if(MitigateSlopeByCosi_) baseSlope = MitigatedSlopeByConsistency(clct);
+  if(mitigateSlopeByCosi_) baseSlope = mitigatedSlopeByConsistency(clct);
   else                     baseSlope = clct.getSlope();
   int clctSlope = pow(-1, clct.getBend()) * baseSlope;
 
@@ -380,7 +373,7 @@ void CSCGEMMatcher::bestClusterBXLoc(const CSCCLCTDigi& clct,
     best = clustersBXLoc[0];
 }
 
-uint16_t CSCGEMMatcher::MitigatedSlopeByConsistency(const CSCCLCTDigi& clct) const {
+uint16_t CSCGEMMatcher::mitigatedSlopeByConsistency(const CSCCLCTDigi& clct) const {
   //extricate hit values from CLCT hit matrix
   std::vector< std::vector<uint16_t> > CLCTHitMatrix = clct.getHits();
   int CLCTHits[6]={-1,-1,-1,-1,-1,-1};
