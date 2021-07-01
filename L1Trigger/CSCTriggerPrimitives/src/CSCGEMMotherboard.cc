@@ -129,6 +129,7 @@ void CSCGEMMotherboard::matchALCTCLCTGEM(bool bunch_crossing_mask[CSCConstants::
         if (clctProc->getBestCLCT(bx_clct).isValid()) {
           LogTrace("CSCMotherboard") << "Successful ALCT-CLCT match: bx_alct = " << bx_alct << "; bx_clct = " << bx_clct
                                      << "; mbx = " << mbx;
+
           // now correlate the ALCT and CLCT into LCT.
           // smaller mbx means more preferred!
           correlateLCTsGEM(alctProc->getBestALCT(bx_alct),
@@ -267,6 +268,7 @@ void CSCGEMMotherboard::correlateLCTsGEM(const CSCALCTDigi& bALCT,
 
   if (!bestALCT.isValid()) {
     edm::LogError("CSCGEMMotherboard") << "Best ALCT invalid in correlateLCTsGEM!";
+    return;
   }
 
   // if the second best ALCT equals the best ALCT, clear it
@@ -298,6 +300,7 @@ void CSCGEMMotherboard::correlateLCTsGEM(const CSCCLCTDigi& bCLCT,
 
   if (!bestCLCT.isValid()) {
     edm::LogError("CSCGEMMotherboard") << "Best CLCT invalid in correlateLCTsGEM!";
+    return;
   }
 
   // if the second best CLCT equals the best CLCT, clear it
@@ -336,17 +339,28 @@ void CSCGEMMotherboard::correlateLCTsGEM(const CSCALCTDigi& bALCT,
 
   if (!bestALCT.isValid()) {
     edm::LogError("CSCGEMMotherboard") << "Best ALCT invalid in correlateLCTsGEM!";
+    return;
   }
 
   if (!bestCLCT.isValid()) {
     edm::LogError("CSCGEMMotherboard") << "Best CLCT invalid in correlateLCTsGEM!";
+    return;
   }
 
-  // if the second best ALCT/CLCT equals the best ALCT/CLCT, clear them
-  if (secondALCT == bestALCT)
-    secondALCT.clear();
-  if (secondCLCT == bestCLCT)
-    secondCLCT.clear();
+  // check which ALCTs and CLCTs are valid
+  const bool anodeBestValid = bestALCT.isValid();
+  const bool anodeSecondValid = secondALCT.isValid();
+  const bool cathodeBestValid = bestCLCT.isValid();
+  const bool cathodeSecondValid = secondCLCT.isValid();
+
+  if (anodeBestValid && !anodeSecondValid)
+    secondALCT = bestALCT;
+  if (!anodeBestValid && anodeSecondValid)
+    bestALCT = secondALCT;
+  if (cathodeBestValid && !cathodeSecondValid)
+    secondCLCT = bestCLCT;
+  if (!cathodeBestValid && cathodeSecondValid)
+    bestCLCT = secondCLCT;
 
   // before matching ALCT-CLCT pairs with clusters, we check if we need
   // to drop particular low quality ALCTs or CLCTs without matching clusters
@@ -371,14 +385,26 @@ void CSCGEMMotherboard::correlateLCTsGEM(const CSCALCTDigi& bALCT,
   cscGEMMatcher_->bestClusterBXLoc(secondALCT, secondCLCT, clusters, ssCluster);
 
   // construct all LCTs with valid ALCT, valid CLCTs and coincidence clusters
-  lcts.push_back(constructLCTsGEM(bestALCT, bestCLCT, bbCluster));
-  lcts.push_back(constructLCTsGEM(bestALCT, secondCLCT, bsCluster));
-  lcts.push_back(constructLCTsGEM(secondALCT, bestCLCT, sbCluster));
-  lcts.push_back(constructLCTsGEM(secondALCT, secondCLCT, ssCluster));
+  CSCCorrelatedLCTDigi lctbb, lctbs, lctsb, lctss;
+  lctbb = constructLCTsGEM(bestALCT, bestCLCT, bbCluster);
+  lctbs = constructLCTsGEM(bestALCT, secondCLCT, bsCluster);
+  lctsb = constructLCTsGEM(secondALCT, bestCLCT, sbCluster);
+  lctss = constructLCTsGEM(secondALCT, secondCLCT, ssCluster);
+
+  // add the valid ones
+  if (lctbb.isValid())
+    lcts.push_back(lctbb);
+  if (lct2.isValid())
+    lcts.push_back(lctbs);
+  if (lctsb.isValid())
+    lcts.push_back(lctsb);
+  if (lctss.isValid())
+    lcts.push_back(lctss);
 
   // no lcts
-  if (lcts.empty())
+  if (lcts.empty()) {
     return;
+  }
 
   // sort by bending angle
   sortLCTsByBending(lcts);

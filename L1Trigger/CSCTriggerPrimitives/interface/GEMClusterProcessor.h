@@ -50,9 +50,9 @@ private:
   void doCoordinateConversion();
 
   /** Chamber id (trigger-type labels). */
-  const int theRegion;
-  const int theStation;
-  const int theChamber;
+  const int region_;
+  const int station_;
+  const int chamber_;
   bool isEven_;
 
   unsigned int maxDeltaPad_;

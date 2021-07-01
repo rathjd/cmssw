@@ -2,68 +2,76 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include <algorithm>
-#include <set>
-
-//----------------
-// Constructors --
-//----------------
+#include <iostream>
 
 GEMClusterProcessor::GEMClusterProcessor(int region, unsigned station, unsigned chamber, const edm::ParameterSet& conf)
-    : theRegion(region), theStation(station), theChamber(chamber) {
-  const edm::ParameterSet copad(station == 1 ? conf.getParameter<edm::ParameterSet>("copadParamGE11")
-                                             : conf.getParameter<edm::ParameterSet>("copadParamGE21"));
+    : region_(region), station_(station), chamber_(chamber) {
 
-  isEven_ = theChamber % 2 == 0;
-  maxDeltaPad_ = copad.getParameter<unsigned int>("maxDeltaPad");
-  maxDeltaRoll_ = copad.getParameter<unsigned int>("maxDeltaRoll");
-  maxDeltaBX_ = copad.getParameter<unsigned int>("maxDeltaBX");
+  isEven_ = chamber_ % 2 == 0;
 
-  padToHsME1aFiles_ = conf.getParameter<std::vector<std::string>>("padToHsME1aFiles");
-  padToHsME1bFiles_ = conf.getParameter<std::vector<std::string>>("padToHsME1bFiles");
-  padToHsME21Files_ = conf.getParameter<std::vector<std::string>>("padToHsME21Files");
+  if (station_ == 1) {
+    const edm::ParameterSet copad(conf.getParameter<edm::ParameterSet>("copadParamGE11"));
+    maxDeltaPad_ = copad.getParameter<unsigned int>("maxDeltaPad");
+    maxDeltaRoll_ = copad.getParameter<unsigned int>("maxDeltaRoll");
+    maxDeltaBX_ = copad.getParameter<unsigned int>("maxDeltaBX");
 
-  padToEsME1aFiles_ = conf.getParameter<std::vector<std::string>>("padToEsME1aFiles");
-  padToEsME1bFiles_ = conf.getParameter<std::vector<std::string>>("padToEsME1bFiles");
-  padToEsME21Files_ = conf.getParameter<std::vector<std::string>>("padToEsME21Files");
+    padToHsME1aFiles_ = conf.getParameter<std::vector<std::string>>("padToHsME1aFiles");
+    padToHsME1bFiles_ = conf.getParameter<std::vector<std::string>>("padToHsME1bFiles");
 
-  rollToMaxWgME11Files_ = conf.getParameter<std::vector<std::string>>("rollToMaxWgME11Files");
-  rollToMinWgME11Files_ = conf.getParameter<std::vector<std::string>>("rollToMinWgME11Files");
-  rollToMaxWgME21Files_ = conf.getParameter<std::vector<std::string>>("rollToMaxWgME21Files");
-  rollToMinWgME21Files_ = conf.getParameter<std::vector<std::string>>("rollToMinWgME21Files");
+    padToEsME1aFiles_ = conf.getParameter<std::vector<std::string>>("padToEsME1aFiles");
+    padToEsME1bFiles_ = conf.getParameter<std::vector<std::string>>("padToEsME1bFiles");
 
-  GEMCSCLUT_pad_hs_ME1a_even_ = std::make_unique<CSCLUTReader>(padToHsME1aFiles_[0]);
-  GEMCSCLUT_pad_hs_ME1a_odd_ = std::make_unique<CSCLUTReader>(padToHsME1aFiles_[1]);
-  GEMCSCLUT_pad_hs_ME1b_even_ = std::make_unique<CSCLUTReader>(padToHsME1bFiles_[0]);
-  GEMCSCLUT_pad_hs_ME1b_odd_ = std::make_unique<CSCLUTReader>(padToHsME1bFiles_[1]);
-  GEMCSCLUT_pad_hs_ME21_even_ = std::make_unique<CSCLUTReader>(padToHsME21Files_[0]);
-  GEMCSCLUT_pad_hs_ME21_odd_ = std::make_unique<CSCLUTReader>(padToHsME21Files_[1]);
+    rollToMaxWgME11Files_ = conf.getParameter<std::vector<std::string>>("rollToMaxWgME11Files");
+    rollToMinWgME11Files_ = conf.getParameter<std::vector<std::string>>("rollToMinWgME11Files");
 
-  GEMCSCLUT_pad_es_ME1a_even_ = std::make_unique<CSCLUTReader>(padToEsME1aFiles_[0]);
-  GEMCSCLUT_pad_es_ME1a_odd_ = std::make_unique<CSCLUTReader>(padToEsME1aFiles_[1]);
-  GEMCSCLUT_pad_es_ME1b_even_ = std::make_unique<CSCLUTReader>(padToEsME1bFiles_[0]);
-  GEMCSCLUT_pad_es_ME1b_odd_ = std::make_unique<CSCLUTReader>(padToEsME1bFiles_[1]);
-  GEMCSCLUT_pad_es_ME21_even_ = std::make_unique<CSCLUTReader>(padToEsME21Files_[0]);
-  GEMCSCLUT_pad_es_ME21_odd_ = std::make_unique<CSCLUTReader>(padToEsME21Files_[1]);
+    GEMCSCLUT_pad_hs_ME1a_even_ = std::make_unique<CSCLUTReader>(padToHsME1aFiles_[0]);
+    GEMCSCLUT_pad_hs_ME1a_odd_ = std::make_unique<CSCLUTReader>(padToHsME1aFiles_[1]);
+    GEMCSCLUT_pad_hs_ME1b_even_ = std::make_unique<CSCLUTReader>(padToHsME1bFiles_[0]);
+    GEMCSCLUT_pad_hs_ME1b_odd_ = std::make_unique<CSCLUTReader>(padToHsME1bFiles_[1]);
 
-  GEMCSCLUT_roll_l1_min_wg_ME11_even_ = std::make_unique<CSCLUTReader>(rollToMinWgME11Files_[0]);
-  GEMCSCLUT_roll_l1_min_wg_ME11_odd_ = std::make_unique<CSCLUTReader>(rollToMinWgME11Files_[1]);
-  GEMCSCLUT_roll_l2_min_wg_ME11_even_ = std::make_unique<CSCLUTReader>(rollToMinWgME11Files_[2]);
-  GEMCSCLUT_roll_l2_min_wg_ME11_odd_ = std::make_unique<CSCLUTReader>(rollToMinWgME11Files_[3]);
+    GEMCSCLUT_pad_es_ME1a_even_ = std::make_unique<CSCLUTReader>(padToEsME1aFiles_[0]);
+    GEMCSCLUT_pad_es_ME1a_odd_ = std::make_unique<CSCLUTReader>(padToEsME1aFiles_[1]);
+    GEMCSCLUT_pad_es_ME1b_even_ = std::make_unique<CSCLUTReader>(padToEsME1bFiles_[0]);
+    GEMCSCLUT_pad_es_ME1b_odd_ = std::make_unique<CSCLUTReader>(padToEsME1bFiles_[1]);
 
-  GEMCSCLUT_roll_l1_max_wg_ME11_even_ = std::make_unique<CSCLUTReader>(rollToMaxWgME11Files_[0]);
-  GEMCSCLUT_roll_l1_max_wg_ME11_odd_ = std::make_unique<CSCLUTReader>(rollToMaxWgME11Files_[1]);
-  GEMCSCLUT_roll_l2_max_wg_ME11_even_ = std::make_unique<CSCLUTReader>(rollToMaxWgME11Files_[2]);
-  GEMCSCLUT_roll_l2_max_wg_ME11_odd_ = std::make_unique<CSCLUTReader>(rollToMaxWgME11Files_[3]);
+    GEMCSCLUT_roll_l1_min_wg_ME11_even_ = std::make_unique<CSCLUTReader>(rollToMinWgME11Files_[0]);
+    GEMCSCLUT_roll_l1_min_wg_ME11_odd_ = std::make_unique<CSCLUTReader>(rollToMinWgME11Files_[1]);
+    GEMCSCLUT_roll_l2_min_wg_ME11_even_ = std::make_unique<CSCLUTReader>(rollToMinWgME11Files_[2]);
+    GEMCSCLUT_roll_l2_min_wg_ME11_odd_ = std::make_unique<CSCLUTReader>(rollToMinWgME11Files_[3]);
 
-  GEMCSCLUT_roll_l1_min_wg_ME21_even_ = std::make_unique<CSCLUTReader>(rollToMinWgME21Files_[0]);
-  GEMCSCLUT_roll_l1_min_wg_ME21_odd_ = std::make_unique<CSCLUTReader>(rollToMinWgME21Files_[1]);
-  GEMCSCLUT_roll_l2_min_wg_ME21_even_ = std::make_unique<CSCLUTReader>(rollToMinWgME21Files_[2]);
-  GEMCSCLUT_roll_l2_min_wg_ME21_odd_ = std::make_unique<CSCLUTReader>(rollToMinWgME21Files_[3]);
+    GEMCSCLUT_roll_l1_max_wg_ME11_even_ = std::make_unique<CSCLUTReader>(rollToMaxWgME11Files_[0]);
+    GEMCSCLUT_roll_l1_max_wg_ME11_odd_ = std::make_unique<CSCLUTReader>(rollToMaxWgME11Files_[1]);
+    GEMCSCLUT_roll_l2_max_wg_ME11_even_ = std::make_unique<CSCLUTReader>(rollToMaxWgME11Files_[2]);
+    GEMCSCLUT_roll_l2_max_wg_ME11_odd_ = std::make_unique<CSCLUTReader>(rollToMaxWgME11Files_[3]);
+  }
 
-  GEMCSCLUT_roll_l1_max_wg_ME21_even_ = std::make_unique<CSCLUTReader>(rollToMaxWgME21Files_[0]);
-  GEMCSCLUT_roll_l1_max_wg_ME21_odd_ = std::make_unique<CSCLUTReader>(rollToMaxWgME21Files_[1]);
-  GEMCSCLUT_roll_l2_max_wg_ME21_even_ = std::make_unique<CSCLUTReader>(rollToMaxWgME21Files_[2]);
-  GEMCSCLUT_roll_l2_max_wg_ME21_odd_ = std::make_unique<CSCLUTReader>(rollToMaxWgME21Files_[3]);
+  if (station_ == 2) {
+    const edm::ParameterSet copad(conf.getParameter<edm::ParameterSet>("copadParamGE21"));
+    maxDeltaPad_ = copad.getParameter<unsigned int>("maxDeltaPad");
+    maxDeltaRoll_ = copad.getParameter<unsigned int>("maxDeltaRoll");
+    maxDeltaBX_ = copad.getParameter<unsigned int>("maxDeltaBX");
+
+    padToHsME21Files_ = conf.getParameter<std::vector<std::string>>("padToHsME21Files");
+    padToEsME21Files_ = conf.getParameter<std::vector<std::string>>("padToEsME21Files");
+
+    rollToMaxWgME21Files_ = conf.getParameter<std::vector<std::string>>("rollToMaxWgME21Files");
+    rollToMinWgME21Files_ = conf.getParameter<std::vector<std::string>>("rollToMinWgME21Files");
+
+    GEMCSCLUT_pad_hs_ME21_even_ = std::make_unique<CSCLUTReader>(padToHsME21Files_[0]);
+    GEMCSCLUT_pad_hs_ME21_odd_ = std::make_unique<CSCLUTReader>(padToHsME21Files_[1]);
+    GEMCSCLUT_pad_es_ME21_even_ = std::make_unique<CSCLUTReader>(padToEsME21Files_[0]);
+    GEMCSCLUT_pad_es_ME21_odd_ = std::make_unique<CSCLUTReader>(padToEsME21Files_[1]);
+
+    GEMCSCLUT_roll_l1_min_wg_ME21_even_ = std::make_unique<CSCLUTReader>(rollToMinWgME21Files_[0]);
+    GEMCSCLUT_roll_l1_min_wg_ME21_odd_ = std::make_unique<CSCLUTReader>(rollToMinWgME21Files_[1]);
+    GEMCSCLUT_roll_l2_min_wg_ME21_even_ = std::make_unique<CSCLUTReader>(rollToMinWgME21Files_[2]);
+    GEMCSCLUT_roll_l2_min_wg_ME21_odd_ = std::make_unique<CSCLUTReader>(rollToMinWgME21Files_[3]);
+
+    GEMCSCLUT_roll_l1_max_wg_ME21_even_ = std::make_unique<CSCLUTReader>(rollToMaxWgME21Files_[0]);
+    GEMCSCLUT_roll_l1_max_wg_ME21_odd_ = std::make_unique<CSCLUTReader>(rollToMaxWgME21Files_[1]);
+    GEMCSCLUT_roll_l2_max_wg_ME21_even_ = std::make_unique<CSCLUTReader>(rollToMaxWgME21Files_[2]);
+    GEMCSCLUT_roll_l2_max_wg_ME21_odd_ = std::make_unique<CSCLUTReader>(rollToMaxWgME21Files_[3]);
+  }
 }
 
 void GEMClusterProcessor::clear() { clusters_.clear(); }
@@ -75,8 +83,7 @@ void GEMClusterProcessor::run(const GEMPadDigiClusterCollection* in_clusters) {
   // Step 2: put coincidence clusters in GEMInternalCluster vector
   addCoincidenceClusters(in_clusters);
 
-  // Step 3: put single clusters in GEMInternalCluster vector who are not
-  // part of any coincidence cluster
+  // Step 3: put single clusters in GEMInternalCluster vector who are not part of any coincidence cluster
   addSingleClusters(in_clusters);
 
   // Step 4: translate the cluster central pad numbers into 1/8-strip number for matching with CSC trigger primitives
@@ -118,8 +125,10 @@ void GEMClusterProcessor::addCoincidenceClusters(const GEMPadDigiClusterCollecti
     if (id.isME0())
       continue;
 
+    std::cout << "analyzing cluster " << id << std::endl;
+
     // same chamber (no restriction on the roll number)
-    if (id.region() != theRegion or id.station() != theStation or id.chamber() != theChamber)
+    if (id.region() != region_ or id.station() != station_ or id.chamber() != chamber_)
       continue;
 
     // all coincidences detIDs will have layer=1
@@ -193,7 +202,7 @@ void GEMClusterProcessor::addSingleClusters(const GEMPadDigiClusterCollection* i
       continue;
 
     // same chamber (no restriction on the roll number)
-    if (id.region() != theRegion or id.station() != theStation or id.chamber() != theChamber)
+    if (id.region() != region_ or id.station() != station_ or id.chamber() != chamber_)
       continue;
 
     const auto& clusters_range = (*det_range).second;
@@ -243,7 +252,7 @@ void GEMClusterProcessor::doCoordinateConversion() {
     int layer2_pad_to_first_hs_me1a = -1;
     int layer2_pad_to_last_hs_me1a = -1;
 
-    if (theStation == 1) {
+    if (station_ == 1) {
       if (isEven_) {
         // ME1/b
         layer1_pad_to_first_hs = GEMCSCLUT_pad_hs_ME1b_even_->lookup(layer1_first_pad);
@@ -270,7 +279,7 @@ void GEMClusterProcessor::doCoordinateConversion() {
     }
 
     // ME2/1
-    if (theStation == 2) {
+    if (station_ == 2) {
       if (isEven_) {
         layer1_pad_to_first_hs = GEMCSCLUT_pad_hs_ME21_even_->lookup(layer1_first_pad);
         layer2_pad_to_first_hs = GEMCSCLUT_pad_hs_ME21_even_->lookup(layer2_first_pad);
@@ -300,7 +309,7 @@ void GEMClusterProcessor::doCoordinateConversion() {
     cluster.set_layer1_middle_hs(layer1_middle_hs);
     cluster.set_layer2_middle_hs(layer2_middle_hs);
 
-    if (theStation == 1) {
+    if (station_ == 1) {
       cluster.set_layer1_first_hs_me1a(layer1_pad_to_first_hs_me1a);
       cluster.set_layer2_first_hs_me1a(layer2_pad_to_first_hs_me1a);
       cluster.set_layer1_last_hs_me1a(layer1_pad_to_last_hs_me1a);
@@ -324,7 +333,7 @@ void GEMClusterProcessor::doCoordinateConversion() {
     int layer2_pad_to_first_es_me1a = -1;
     int layer2_pad_to_last_es_me1a = -1;
 
-    if (theStation == 1) {
+    if (station_ == 1) {
       if (isEven_) {
         // ME1/b
         layer1_pad_to_first_es = GEMCSCLUT_pad_es_ME1b_even_->lookup(layer1_first_pad);
@@ -351,7 +360,7 @@ void GEMClusterProcessor::doCoordinateConversion() {
     }
 
     // ME2/1
-    if (theStation == 2) {
+    if (station_ == 2) {
       if (isEven_) {
         layer1_pad_to_first_es = GEMCSCLUT_pad_es_ME21_even_->lookup(layer1_first_pad);
         layer2_pad_to_first_es = GEMCSCLUT_pad_es_ME21_even_->lookup(layer2_first_pad);
@@ -381,7 +390,7 @@ void GEMClusterProcessor::doCoordinateConversion() {
     cluster.set_layer1_middle_es(layer1_middle_es);
     cluster.set_layer2_middle_es(layer2_middle_es);
 
-    if (theStation == 1) {
+    if (station_ == 1) {
       cluster.set_layer1_first_es_me1a(layer1_pad_to_first_es_me1a);
       cluster.set_layer2_first_es_me1a(layer2_pad_to_first_es_me1a);
       cluster.set_layer1_last_es_me1a(layer1_pad_to_last_es_me1a);
@@ -401,7 +410,7 @@ void GEMClusterProcessor::doCoordinateConversion() {
     int roll_l2_to_max_wg = -1;
 
     // ME1/1
-    if (theStation == 1) {
+    if (station_ == 1) {
       if (isEven_) {
         roll_l1_to_min_wg = GEMCSCLUT_roll_l1_min_wg_ME11_even_->lookup(roll);
         roll_l1_to_max_wg = GEMCSCLUT_roll_l1_max_wg_ME11_even_->lookup(roll);
@@ -416,7 +425,7 @@ void GEMClusterProcessor::doCoordinateConversion() {
     }
 
     // ME2/1
-    if (theStation == 2) {
+    if (station_ == 2) {
       if (isEven_) {
         roll_l1_to_min_wg = GEMCSCLUT_roll_l1_min_wg_ME21_even_->lookup(roll);
         roll_l1_to_max_wg = GEMCSCLUT_roll_l1_max_wg_ME21_even_->lookup(roll);

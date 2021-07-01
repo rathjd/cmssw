@@ -3,7 +3,7 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 CSCLUTReader::CSCLUTReader(const std::string& fname)
-    : nrBitsAddress_(0), nrBitsData_(0), addressMask_(0), dataMask_(0), data_(), m_codeInWidth(12), m_outWidth(32) {
+  : nrBitsAddress_(0), nrBitsData_(0), addressMask_(0), dataMask_(0), data_(), m_codeInWidth(12), m_outWidth(32) {
   if (fname != std::string("")) {
     load(fname);
   } else {
@@ -70,8 +70,10 @@ int CSCLUTReader::read(std::istream& stream) {
   data_.clear();
 
   int readHeaderCode = readHeader(stream);
-  if (readHeaderCode != SUCCESS)
+  if (readHeaderCode != SUCCESS) {
+    edm::LogError("CSCLUTReader") << "Failed to read header code.";
     return readHeaderCode;
+  }
 
   std::vector<std::pair<unsigned int, float> > entries;
   unsigned int maxAddress = addressMask_;
