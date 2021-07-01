@@ -432,29 +432,29 @@ void CSCGEMMatcher::bestClusterBXLoc(const CSCALCTDigi& alct,
 int CSCGEMMatcher::CSCGEMSlopeCorrector(bool isL1orCoincidence, int cscSlope) const {
 
   int SlopeShift = 0;
-  int SlopeSign = cscSlope/fabs(cscSlope);
+  int SlopeSign = cscSlope/std::abs(cscSlope);
   //account for slope mitigation by cosi, if opted-in
-  if(MitigateSlopeByCosi_){
+  if(mitigateSlopeByCosi_){
 
     //determine cosi-based slope correction
     if(chamber_ % 2 == 0){
-      if(isL1orCoincidence) SlopeShift = gem_csc_slope_cosi_corr_L1_ME11_even_->lookup((uint16_t)fabs(cscSlope));
-      else                  SlopeShift = gem_csc_slope_cosi_corr_L2_ME11_even_->lookup((uint16_t)fabs(cscSlope));
+      if(isL1orCoincidence) SlopeShift = gem_csc_slope_cosi_corr_L1_ME11_even_->lookup(std::abs(cscSlope));
+      else                  SlopeShift = gem_csc_slope_cosi_corr_L2_ME11_even_->lookup(std::abs(cscSlope));
     }
     else{
-      if(isL1orCoincidence) SlopeShift = gem_csc_slope_cosi_corr_L1_ME11_odd_->lookup((uint16_t)fabs(cscSlope));
-      else                  SlopeShift = gem_csc_slope_cosi_corr_L2_ME11_odd_->lookup((uint16_t)fabs(cscSlope));
+      if(isL1orCoincidence) SlopeShift = gem_csc_slope_cosi_corr_L1_ME11_odd_->lookup(std::abs(cscSlope));
+      else                  SlopeShift = gem_csc_slope_cosi_corr_L2_ME11_odd_->lookup(std::abs(cscSlope));
     }
   }
   else{
     //determine shift by slope correction
     if(chamber_ % 2 == 0){
-      if(isL1orCoincidence) SlopeShift = gem_csc_slope_corr_L1_ME11_even_->lookup((uint16_t)fabs(cscSlope));
-      else                  SlopeShift = gem_csc_slope_corr_L2_ME11_even_->lookup((uint16_t)fabs(cscSlope));
+      if(isL1orCoincidence) SlopeShift = gem_csc_slope_corr_L1_ME11_even_->lookup(std::abs(cscSlope));
+      else                  SlopeShift = gem_csc_slope_corr_L2_ME11_even_->lookup(std::abs(cscSlope));
     }
     else{
-      if(isL1orCoincidence) SlopeShift = gem_csc_slope_corr_L1_ME11_odd_->lookup((uint16_t)fabs(cscSlope));
-      else                  SlopeShift = gem_csc_slope_corr_L2_ME11_odd_->lookup((uint16_t)fabs(cscSlope));
+      if(isL1orCoincidence) SlopeShift = gem_csc_slope_corr_L1_ME11_odd_->lookup(std::abs(cscSlope));
+      else                  SlopeShift = gem_csc_slope_corr_L2_ME11_odd_->lookup(std::abs(cscSlope));
     }
   }
   return round(SlopeShift * SlopeSign * endcap_);
