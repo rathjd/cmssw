@@ -412,6 +412,7 @@ void CSCGEMMatcher::bestClusterBXLoc(const CSCALCTDigi& alct,
 int CSCGEMMatcher::CSCGEMSlopeCorrector(bool isL1orCoincidence, int cscSlope) const {
 
   int SlopeShift = 0;
+  int SlopeSign = cscSlope/fabs(cscSlope);
   //account for slope mitigation by cosi, if opted-in
   if(MitigateSlopeByCosi_){
 
@@ -436,5 +437,5 @@ int CSCGEMMatcher::CSCGEMSlopeCorrector(bool isL1orCoincidence, int cscSlope) co
       else                  SlopeShift = gem_csc_slope_corr_L2_ME11_odd_->lookup((uint16_t)fabs(cscSlope));
     }
   }
-  return round(SlopeShift * endcap_);
+  return round(SlopeShift * SlopeSign * endcap_);
 }
