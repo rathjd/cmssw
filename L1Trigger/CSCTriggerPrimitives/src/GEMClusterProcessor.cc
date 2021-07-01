@@ -6,7 +6,6 @@
 
 GEMClusterProcessor::GEMClusterProcessor(int region, unsigned station, unsigned chamber, const edm::ParameterSet& conf)
     : region_(region), station_(station), chamber_(chamber) {
-
   isEven_ = chamber_ % 2 == 0;
 
   if (station_ == 1) {

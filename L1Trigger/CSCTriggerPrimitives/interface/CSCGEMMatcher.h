@@ -142,7 +142,7 @@ private:
   std::unique_ptr<CSCLUTReader> gem_csc_slope_cosi_3to1_L1_ME11_even_;
   std::unique_ptr<CSCLUTReader> gem_csc_slope_cosi_2to1_L1_ME11_odd_;
   std::unique_ptr<CSCLUTReader> gem_csc_slope_cosi_3to1_L1_ME11_odd_;
-   
+
   std::unique_ptr<CSCLUTReader> gem_csc_slope_corr_L1_ME11_even_;
   std::unique_ptr<CSCLUTReader> gem_csc_slope_corr_L2_ME11_even_;
   std::unique_ptr<CSCLUTReader> gem_csc_slope_corr_L1_ME11_odd_;
