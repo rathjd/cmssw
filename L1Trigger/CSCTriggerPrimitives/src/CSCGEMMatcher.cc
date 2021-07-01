@@ -10,7 +10,7 @@
 #include <cmath>
 
 CSCGEMMatcher::CSCGEMMatcher(
-    int endcap, unsigned station, unsigned chamber, const edm::ParameterSet& tmbParams, const edm::ParameterSet& luts)
+    int endcap, unsigned station, unsigned chamber, const edm::ParameterSet& tmbParams, const edm::ParameterSet& conf)
     : endcap_(endcap), station_(station), chamber_(chamber) {
   isEven_ = (chamber_ % 2 == 0);
 
@@ -27,28 +27,41 @@ CSCGEMMatcher::CSCGEMMatcher(
 
   assign_gem_csc_bending_ = tmbParams.getParameter<bool>("assignGEMCSCBending");
 
+  gemCscSlopeCorrectionFiles_ = conf.getParameter<std::vector<std::string>>("gemCscSlopeCorrectionFiles");
+
+  gem_csc_slope_corr_L1_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[0]);
+  gem_csc_slope_corr_L2_ME11_even_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[1]);
+  gem_csc_slope_corr_L1_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[2]);
+  gem_csc_slope_corr_L2_ME11_odd_ = std::make_unique<CSCLUTReader>(gemCscSlopeCorrectionFiles_[3]);
+
   if (assign_gem_csc_bending_) {
-    esDiffToSlopeME1aFiles_ = luts.getParameter<std::vector<std::string> >("esDiffToSlopeME1aFiles");
-    esDiffToSlopeME1bFiles_ = luts.getParameter<std::vector<std::string> >("esDiffToSlopeME1bFiles");
-    esDiffToSlopeME21Files_ = luts.getParameter<std::vector<std::string> >("esDiffToSlopeME21Files");
 
-    es_diff_slope_L1_ME1a_even_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1aFiles_[0]);
-    es_diff_slope_L1_ME1a_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1aFiles_[1]);
-    es_diff_slope_L2_ME1a_even_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1aFiles_[2]);
-    es_diff_slope_L2_ME1a_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1aFiles_[3]);
+    if (station_ == 1) {
+      esDiffToSlopeME1aFiles_ = conf.getParameter<std::vector<std::string>>("esDiffToSlopeME1aFiles");
+      esDiffToSlopeME1bFiles_ = conf.getParameter<std::vector<std::string>>("esDiffToSlopeME1bFiles");
 
-    es_diff_slope_L1_ME1b_even_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1bFiles_[0]);
-    es_diff_slope_L1_ME1b_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1bFiles_[1]);
-    es_diff_slope_L2_ME1b_even_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1bFiles_[2]);
-    es_diff_slope_L2_ME1b_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1bFiles_[3]);
+      es_diff_slope_L1_ME1a_even_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1aFiles_[0]);
+      es_diff_slope_L1_ME1a_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1aFiles_[1]);
+      es_diff_slope_L2_ME1a_even_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1aFiles_[2]);
+      es_diff_slope_L2_ME1a_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1aFiles_[3]);
 
-    es_diff_slope_L1_ME21_even_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME21Files_[0]);
-    es_diff_slope_L1_ME21_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME21Files_[1]);
-    es_diff_slope_L2_ME21_even_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME21Files_[2]);
-    es_diff_slope_L2_ME21_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME21Files_[3]);
+      es_diff_slope_L1_ME1b_even_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1bFiles_[0]);
+      es_diff_slope_L1_ME1b_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1bFiles_[1]);
+      es_diff_slope_L2_ME1b_even_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1bFiles_[2]);
+      es_diff_slope_L2_ME1b_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME1bFiles_[3]);
+    }
+
+    if (station_ == 2) {
+      esDiffToSlopeME21Files_ = conf.getParameter<std::vector<std::string>>("esDiffToSlopeME21Files");
+
+      es_diff_slope_L1_ME21_even_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME21Files_[0]);
+      es_diff_slope_L1_ME21_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME21Files_[1]);
+      es_diff_slope_L2_ME21_even_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME21Files_[2]);
+      es_diff_slope_L2_ME21_odd_ = std::make_unique<CSCLUTReader>(esDiffToSlopeME21Files_[3]);
+    }
   }
 
-  MitigateSlopeByCosi_ = tmbParams.getParameter<bool>("MitigateSlopeByCosi");
+  MitigateSlopeByCosi_ = tmbParams.getParameter<bool>("mitigateSlopeByCosi");
 
   if (MitigateSlopeByCosi_) {
     gemCscSlopeCosiFiles_ = luts.getParameter<std::vector<std::string> >("gemCscSlopeCosiFiles");
@@ -347,20 +360,24 @@ void CSCGEMMatcher::matchingClustersBXLoc(const CSCALCTDigi& alct,
 void CSCGEMMatcher::bestClusterBXLoc(const CSCALCTDigi& alct,
                                      const GEMInternalClusters& clusters,
                                      GEMInternalCluster& best) const {
-  GEMInternalClusters alctClustersBXLoc;
-  matchingClustersBXLoc(alct, clusters, alctClustersBXLoc);
+  GEMInternalClusters clustersBXLoc;
+  matchingClustersBXLoc(alct, clusters, clustersBXLoc);
 
-  if (!alctClustersBXLoc.empty())
-    best = alctClustersBXLoc[0];
+  // simply pick the first matching one
+  if (!clustersBXLoc.empty())
+    best = clustersBXLoc[0];
 }
 
 void CSCGEMMatcher::bestClusterBXLoc(const CSCCLCTDigi& clct,
                                      const GEMInternalClusters& clusters,
                                      GEMInternalCluster& best) const {
-  // const auto& clctClusters = matchingClustersBX(clct, clusters);
+  // match by BX
+  GEMInternalClusters clustersBXLoc;
+  matchingClustersBXLoc(clct, clusters, clustersBXLoc);
 
-  // check all matches
-  // return cluster with smallest bending angle after slope corrections
+  // FIXME - for now: pick the first matching one
+  if (!clustersBXLoc.empty())
+    best = clustersBXLoc[0];
 }
 
 uint16_t CSCGEMMatcher::MitigatedSlopeByConsistency(const CSCCLCTDigi& clct) const {
@@ -407,7 +424,17 @@ uint16_t CSCGEMMatcher::MitigatedSlopeByConsistency(const CSCCLCTDigi& clct) con
 void CSCGEMMatcher::bestClusterBXLoc(const CSCALCTDigi& alct,
                                      const CSCCLCTDigi& clct,
                                      const GEMInternalClusters& clusters,
-                                     GEMInternalCluster& best) const {}
+                                     GEMInternalCluster& best) const {
+
+  // match by BX
+  GEMInternalClusters clustersBXLoc;
+  matchingClustersBXLoc(alct, clct, clusters, clustersBXLoc);
+
+  // FIXME - for now: pick the first matching one
+  if (!clustersBXLoc.empty())
+    best = clustersBXLoc[0];
+
+}
 
 int CSCGEMMatcher::CSCGEMSlopeCorrector(bool isL1orCoincidence, int cscSlope) const {
 

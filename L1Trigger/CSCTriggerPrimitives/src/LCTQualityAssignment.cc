@@ -7,6 +7,13 @@
 
 LCTQualityAssignment::LCTQualityAssignment(unsigned station) : station_(station) {}
 
+unsigned LCTQualityAssignment::findQuality(const CSCALCTDigi& aLCT, const CSCCLCTDigi& cLCT, bool runCCLUT) const {
+  if (runCCLUT)
+    return findQualityRun3(aLCT, cLCT);
+  else
+    return findQualityRun2(aLCT, cLCT);
+}
+
 // 4-bit LCT quality number.
 unsigned LCTQualityAssignment::findQualityRun2(const CSCALCTDigi& aLCT, const CSCCLCTDigi& cLCT) const {
   LCT_QualityRun2 qual = LCT_QualityRun2::INVALID;
@@ -101,13 +108,13 @@ unsigned LCTQualityAssignment::findQualityRun3(const CSCALCTDigi& aLCT, const CS
   }
   // use number of layers on each as indicator
   else {
-    bool a4 = (aLCT.getQuality() >= 1);
-    bool a5 = (aLCT.getQuality() >= 1);
-    bool a6 = (aLCT.getQuality() >= 1);
+    const bool a4 = (aLCT.getQuality() >= 1);
+    const bool a5 = (aLCT.getQuality() >= 2);
+    const bool a6 = (aLCT.getQuality() == 3);
 
-    bool c4 = (cLCT.getQuality() >= 4);
-    bool c5 = (cLCT.getQuality() >= 4);
-    bool c6 = (cLCT.getQuality() >= 4);
+    const bool c4 = (cLCT.getQuality() >= 4);
+    const bool c5 = (cLCT.getQuality() >= 5);
+    const bool c6 = (cLCT.getQuality() == 6);
     if (a6 or c6)
       qual = LCT_QualityRun3::HighQ;
     else if (a5 or c5)
@@ -118,8 +125,16 @@ unsigned LCTQualityAssignment::findQualityRun3(const CSCALCTDigi& aLCT, const CS
   return static_cast<unsigned>(qual);
 }
 
-unsigned LCTQualityAssignment::findQualityGEMv1(const CSCALCTDigi& aLCT, const CSCCLCTDigi& cLCT, int gemlayers) const {
+unsigned LCTQualityAssignment::findQualityGEMv1(const CSCALCTDigi& aLCT,
+                                                const CSCCLCTDigi& cLCT,
+                                                const GEMInternalCluster& cl) const {
   LCT_QualityRun2 qual = LCT_QualityRun2::INVALID;
+
+  int gemlayers = 0;
+  if (cl.isValid())
+    gemlayers = 1;
+  if (cl.isCoincidence())
+    gemlayers = 2;
 
   // Either ALCT or CLCT is invalid
   if (!(aLCT.isValid()) || !(cLCT.isValid())) {
@@ -209,23 +224,52 @@ unsigned LCTQualityAssignment::findQualityGEMv1(const CSCALCTDigi& aLCT, const C
   return static_cast<unsigned>(qual);
 }
 
-unsigned LCTQualityAssignment::findQualityGEMv2(const CSCALCTDigi& aLCT, const CSCCLCTDigi& cLCT, int gemlayers) const {
+unsigned LCTQualityAssignment::findQualityGEMv2(const CSCALCTDigi& aLCT,
+                                                const CSCCLCTDigi& cLCT,
+                                                const GEMInternalCluster& cl,
+                                                bool assignGEMCSCBending) const {
   LCT_QualityRun3GEM qual = LCT_QualityRun3GEM::INVALID;
 
-  // ALCT and CLCT invalid
-  if (!(aLCT.isValid()) and !(cLCT.isValid())) {
-    qual = LCT_QualityRun3GEM::INVALID;
-  } else if (!aLCT.isValid() && cLCT.isValid() and gemlayers == 2) {
-    qual = LCT_QualityRun3GEM::CLCT_2GEM;
-  } else if (aLCT.isValid() && !cLCT.isValid() and gemlayers == 2) {
-    qual = LCT_QualityRun3GEM::ALCT_2GEM;
-  } else if (aLCT.isValid() && cLCT.isValid()) {
-    if (gemlayers == 0)
-      qual = LCT_QualityRun3GEM::ALCT_CLCT;
-    else if (gemlayers == 1)
-      qual = LCT_QualityRun3GEM::ALCT_CLCT_1GEM_GEMCSCBend;
-    else if (gemlayers == 2)
+  const bool aValid(aLCT.isValid());
+  const bool cValid(cLCT.isValid());
+  const bool gValid(cl.isValid());
+  const bool ggValid(cl.isValid() and cl.isCoincidence());
+
+  // ALCT-CLCT-2GEM
+  if (aValid and cValid and ggValid) {
+    if (assignGEMCSCBending)
       qual = LCT_QualityRun3GEM::ALCT_CLCT_2GEM_GEMCSCBend;
+    else
+      qual = LCT_QualityRun3GEM::ALCT_CLCT_2GEM_CSCBend;
   }
+
+  // ALCT-CLCT-1GEM
+  else if (aValid and cValid and gValid) {
+    if (assignGEMCSCBending)
+      qual = LCT_QualityRun3GEM::ALCT_CLCT_1GEM_GEMCSCBend;
+    else
+      qual = LCT_QualityRun3GEM::ALCT_CLCT_1GEM_CSCBend;
+  }
+
+  // ALCT-CLCT
+  else if (aValid and cValid) {
+    qual = LCT_QualityRun3GEM::ALCT_CLCT;
+  }
+
+  // CLCT-2GEM
+  else if (cValid and ggValid) {
+    qual = LCT_QualityRun3GEM::CLCT_2GEM;
+  }
+
+  // ALCT-2GEM
+  else if (aValid and ggValid) {
+    qual = LCT_QualityRun3GEM::ALCT_2GEM;
+  }
+
+  // at this point we have exhausted all possibilities
+  // only remaing option is an invalid LCT
+  else
+    qual = LCT_QualityRun3GEM::INVALID;
+
   return static_cast<unsigned>(qual);
 }
