@@ -39,7 +39,7 @@ GEMInternalCluster::GEMInternalCluster(const GEMDetId& id,
 }
 
 GEMPadDigi GEMInternalCluster::mid1() const {
-  if (cl1_.isValid())
+  if (!cl1_.isValid())
     return GEMPadDigi();
   const unsigned pad = cl1_.pads()[cl1_.pads().size() / 2];
 
@@ -47,7 +47,7 @@ GEMPadDigi GEMInternalCluster::mid1() const {
 }
 
 GEMPadDigi GEMInternalCluster::mid2() const {
-  if (cl2_.isValid())
+  if (!cl2_.isValid())
     return GEMPadDigi();
   const unsigned pad = cl2_.pads()[cl2_.pads().size() / 2];
 

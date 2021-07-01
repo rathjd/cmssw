@@ -70,8 +70,10 @@ int CSCLUTReader::read(std::istream& stream) {
   data_.clear();
 
   int readHeaderCode = readHeader(stream);
-  if (readHeaderCode != SUCCESS)
+  if (readHeaderCode != SUCCESS) {
+    edm::LogError("CSCLUTReader") << "Failed to read header code.";
     return readHeaderCode;
+  }
 
   std::vector<std::pair<unsigned int, float> > entries;
   unsigned int maxAddress = addressMask_;

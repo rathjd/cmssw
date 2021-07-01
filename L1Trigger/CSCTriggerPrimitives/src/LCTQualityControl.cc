@@ -201,7 +201,7 @@ void LCTQualityControl::checkValid(const CSCCorrelatedLCTDigi& lct, unsigned sta
   }
 
   // non-GEM-CSC stations ALWAYS send out ALCTCLCT type LCTs
-  if (!(ring == 1 and (station == 1 or station == 2))) {
+  if (!isME11_ and !isME21_) {
     if (lct.getType() != CSCCorrelatedLCTDigi::ALCTCLCT) {
       edm::LogError("LCTQualityControl") << "CSCCorrelatedLCTDigi with invalid type (SIM) in this station: "
                                          << lct.getType() << "; allowed [" << CSCCorrelatedLCTDigi::ALCTCLCT << "]";
@@ -210,8 +210,8 @@ void LCTQualityControl::checkValid(const CSCCorrelatedLCTDigi& lct, unsigned sta
   }
 
   // GEM-CSC stations can send out GEM-type LCTs ONLY when the ILT is turned on!
-  if (ring == 1 and lct.getType() != CSCCorrelatedLCTDigi::ALCTCLCT) {
-    if ((station == 1 and !runME11ILT_) or (station == 2 and !runME21ILT_)) {
+  if ((isME11_ and !runME11ILT_) or (isME21_ and !runME21ILT_)) {
+    if (lct.getType() != CSCCorrelatedLCTDigi::ALCTCLCT) {
       edm::LogError("LCTQualityControl") << "CSCCorrelatedLCTDigi with invalid type (SIM) with GEM-CSC trigger not on: "
                                          << lct.getType() << "; allowed [" << CSCCorrelatedLCTDigi::ALCTCLCT << "]";
       errors++;
@@ -433,7 +433,7 @@ std::pair<unsigned, unsigned> LCTQualityControl::get_csc_lct_min_max_quality(uns
   }
 
   // Run-3 with GEM-CSC on (low-quality CLCTs are permitted, but use Run-2 data format)
-  const bool GEMCSC = (station == 1 and ring == 1 and runME11ILT_) or (station == 2 and ring == 1 and runME11ILT_);
+  const bool GEMCSC = (isME11_ and runME11ILT_) or (isME21_ and runME21ILT_);
   if (GEMCSC) {
     min_quality = static_cast<unsigned>(LCTQualityAssignment::LCT_QualityRun2::HQ_ANODE_MARGINAL_CATHODE);
   }
