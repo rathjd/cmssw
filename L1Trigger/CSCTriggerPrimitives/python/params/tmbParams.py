@@ -68,12 +68,17 @@ tmbPhase2GEM = tmbPhase2.clone(
     # assign GEM-CSC bending angle. Works only for
     # Run-3 GEM-CSC TPs.
     assignGEMCSCBending = cms.bool(False),
-    # hwether to drop GEMs that were matched to ALCTs or CLCTs
+    # whether to drop GEMs that were matched to ALCTs or CLCTs
     # in this BX, and not use them in the following BX
     tmbDropUsedGems = cms.bool(False),
     # For ALCT-centric matching to GEMs, break after finding
     # the first BX with matching GEM coincidence clusters
     matchEarliestGemsOnly = cms.bool(False),
+    # When running the GEM-CSC matching, whether to mitigate
+    # the slope of CLCTs with high, meaning inconsistent, 
+    # values of cosi (consistency of slope indicator)
+    # to optimize GEM-CSC slope correction
+    mitigateSlopeByCosi = cms.bool(True),
 )
 
 # to be used by ME11 chambers with GEM-CSC ILT
