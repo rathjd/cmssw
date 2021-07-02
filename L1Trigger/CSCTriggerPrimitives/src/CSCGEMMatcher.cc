@@ -419,7 +419,7 @@ uint16_t CSCGEMMatcher::mitigatedSlopeByConsistency(const CSCCLCTDigi& clct) con
       return gem_csc_slope_cosi_2to1_L1_ME11_odd_->lookup(clct.getSlope());
   } else if (cosi == 3) {
     if (chamber_ % 2 == 0)
-      return gem_csc_slope_cosi_2to1_L1_ME11_even_->lookup(clct.getSlope());  //need to look up in table 3->1
+      return gem_csc_slope_cosi_3to1_L1_ME11_even_->lookup(clct.getSlope());  //need to look up in table 3->1
     else
       return gem_csc_slope_cosi_3to1_L1_ME11_odd_->lookup(clct.getSlope());  //need to look up in table 3->1
   } else
